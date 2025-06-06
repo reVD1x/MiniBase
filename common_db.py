@@ -8,7 +8,7 @@
 #--------------------------------------------------
 BLOCK_SIZE=4096 # the size of one block during reading files
 
-global_lexer=None   # the global lex, which is filled in the moudle lex_db.py
+global_lexer=None   # the global lex, which is filled in the module lex_db.py
 global_parser=None  # the global yacc, which is filled in the module yacc_db.py
 global_syn_tree=None # the global syntax tree, which is filled in parser_db.py
 global_logical_tree=None # global variable, which is to store the logical query plan tree

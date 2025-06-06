@@ -17,7 +17,7 @@ import storage_db  # the module to process the storage of instance
 
 import query_plan_db  # for SQL clause of which data is stored in binary format
 import lex_db  # for lex, where data is stored in binary format
-import parser_db  # for yacc, where ddata is tored in binary format
+import parser_db  # for yacc, where ddata is stored in binary format
 import common_db  # the global variables, functions, constants in the program
 import query_plan_db  # construct the query plan and execute it
 
@@ -163,7 +163,7 @@ def main():
         elif choice == '6':  # delete a line of data from the storage file given the keyword
 
             table_name = input('please input the name of the table to be deleted from:')
-            field_name = input('please input the field name and the corresponding keyword (fieldname:keyword):')
+            field_name = input('please input the field name and the corresponding keyword (fieldName:keyword):')
             # to the students: to be inserted here, delete the line from data files
 ######
             if isinstance(table_name, str):
@@ -175,7 +175,7 @@ def main():
                 field_name = field_name.strip()
                 keyword = keyword.strip()
             except:
-                print('Invalid input format! Please use "fieldname:keyword"')
+                print('Invalid input format! Please use "fieldName:keyword"')
                 choice = input(PROMPT_STR)
                 continue
 
@@ -347,7 +347,7 @@ def main():
 
 
         elif choice == '.':
-            print('main loop finishies')
+            print('main loop finishes')
             del schemaObj
             break
 
@@ -356,5 +356,7 @@ def main():
 
 if __name__ == '__main__':
     main()
+
+
 
 

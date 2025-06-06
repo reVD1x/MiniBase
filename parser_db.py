@@ -36,7 +36,7 @@ from lex_db import tokens
 # input:
 #       syntax tree
 # output:
-#       true or falise
+#       true or false
 #-----------------------------
 def check_syn_tree(syn_tree):
     if syn_tree:

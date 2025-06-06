@@ -4,7 +4,7 @@
 # modified by: Ning wang, Yidan Xu
 #-----------------------------------------------
 # to process the schema data, which is stored in all.sch
-# all.sch are divied into three parts,namely metaHead, tableNameHead and body
+# all.sch are divided into three parts,namely metaHead, tableNameHead and body
 # metaHead|tableNameHead|body
 #-------------------------------------------
 
@@ -28,7 +28,7 @@ META_HEAD_SIZE=12                                           #the First part in t
 
 #the following is the structure of tableNameHead
 """
-tablename|numofFeilds|beginOffsetInBody|....|tablename|numofFeilds|beginOffsetInBody|
+tableName|numOfFields|beginOffsetInBody|....|tableName|numOfFields|beginOffsetInBody|
 10 bytes |4 bytes    |4 bytes
 """
 MAX_TABLE_NAME_LEN=10                                       # the maximum length of table name
@@ -52,11 +52,11 @@ MAX_FIELD_SECTION_SIZE=FIELD_ENTRY_SIZE_PER_TABLE*MAX_TABLE_NUM #the THIRD part 
 
 
 
-BODY_BEGIN_INDEX=META_HEAD_SIZE+TABLE_NAME_HEAD_SIZE            # Intitially, where the field name, type and length are stored
+BODY_BEGIN_INDEX=META_HEAD_SIZE+TABLE_NAME_HEAD_SIZE            # Initially, where the field name, type and length are stored
 
 
 # -----------------------------
-# the table name is padded if its lenght is smaller than MAX_TABLE_NAME_WHEN
+# the table name is padded if its length is smaller than MAX_TABLE_NAME_WHEN
 # input:
 #       tableName: the table name       
 # -------------------------------
@@ -81,7 +81,7 @@ class Schema(object):
 
     def viewTableNames(self):  # to list all the table names in the all.sch
 
-        print ('viewtablenames begin to execute')
+        print ('view table names begin to execute')
         # to be inserted here
         for i in self.headObj.tableNames:
             print ('Table name is     ', i[0])
@@ -114,7 +114,7 @@ class Schema(object):
         self.fileObj = open(Schema.fileName, 'rb+')  # in binary format
 
         # read all data from schema file
-        bufLen = META_HEAD_SIZE + TABLE_NAME_HEAD_SIZE + MAX_FIELD_SECTION_SIZE  # the length of metahead, table name entries and feildName sections
+        bufLen = META_HEAD_SIZE + TABLE_NAME_HEAD_SIZE + MAX_FIELD_SECTION_SIZE  # the length of meta head, table name entries and fieldName sections
         buf = ctypes.create_string_buffer(bufLen)
         buf = self.fileObj.read(bufLen)
 
@@ -122,7 +122,7 @@ class Schema(object):
         buf.strip()
         if len(buf) == 0:  # for the first time, there is nothing in the schema file
             self.body_begin_index = BODY_BEGIN_INDEX
-            buf = struct.pack('!?ii', False, 0, self.body_begin_index)  # is_stored, tablenum,offset
+            buf = struct.pack('!?ii', False, 0, self.body_begin_index)  # is_stored, tableNum,offset
 
             self.fileObj.seek(0)
             self.fileObj.write(buf)
@@ -136,13 +136,13 @@ class Schema(object):
             fieldsList = {}
             self.headObj = head_db.Header(nameList, fieldsList,False, 0, self.body_begin_index)
 
-            print ('metaHead of schema has been written to all.sch and the Header ojbect created')
+            print ('metaHead of schema has been written to all.sch and the Header object created')
 
         else:  # there is something in the schema file
 
 
             print ("there is something  in the all.sch")
-            # in the following ? denotes bool type and  i denotes int type
+            # in the following '?' denotes bool type and 'i' denotes int type
             isStored, tempTableNum, tempOffset = struct.unpack_from('!?ii', buf, 0)   #link:https://docs.python.org/2/library/struct.html
 
             print ("tableNum in schema file is ", tempTableNum)
@@ -167,7 +167,7 @@ class Schema(object):
                     # fetch the table name in tableNameHead
                     tempName, = struct.unpack_from('!10s', buf,
                                                    META_HEAD_SIZE + i * TABLE_NAME_ENTRY_LEN)  # Note: '!' means no memory alignment
-                    print ("tablename is ", tempName)
+                    print ("table name is ", tempName)
 
                     # fetch the number of fields in the table in tableNameHead
                     tempNum, = struct.unpack_from('!i', buf, META_HEAD_SIZE + i * TABLE_NAME_ENTRY_LEN + 10)
@@ -181,7 +181,7 @@ class Schema(object):
                     tempNameMix = (tempName.strip(), tempNum, tempPos)
                     nameList.append(tempNameMix)  # It is a triple
 
-                    # the following is to fetch field information from body section and each field is  (fieldname,fieldtype,fieldlength)
+                    # the following is to fetch field information from body section and each field is  (fieldName,fieldType,fieldLength)
                     if tempNum > 0: # the number of fields is greater than 0
                         fields = []  # it is a list
                         for j in range(tempNum):
@@ -209,7 +209,7 @@ class Schema(object):
     # ----------------------------
     # destructor of the class
     # ----------------------------
-    def __del__(self):  # write the metahead information in head object to file
+    def __del__(self):  # write the meta head information in head object to file
 
         print ("__del__ of class Schema begins to execute")
 
@@ -238,15 +238,15 @@ class Schema(object):
     # -----------------------------
     # insert a table schema to the schema file
     # input:
-    #       tablename: the table to be added
-    #       fieldList: the field information list and each element is a tuple(fieldname,fieldtype,fieldlength)
+    #       tableName: the table to be added
+    #       fieldList: the field information list and each element is a tuple(fieldName,fieldType,fieldLength)
     # -------------------------------
-    def appendTable(self, tableName, fieldList):  # it modify the tableNameHead and body of all.sch
+    def appendTable(self, tableName, fieldList):  # it modifies the tableNameHead and body of all.sch
         print ("appendTable begins to execute")
         tableName.strip()
 
         if len(tableName) == 0 or len(tableName) > 10 or len(fieldList)==0:
-            print ('tablename is invalid or field list is invalid')
+            print ('table name is invalid or field list is invalid')
         else:
 
             fieldNum = len(fieldList)
@@ -320,7 +320,7 @@ class Schema(object):
     # ------------------------------------------------   
 
     def WriteBuff(self):
-        bufLen = META_HEAD_SIZE + TABLE_NAME_HEAD_SIZE + MAX_FIELD_SECTION_SIZE  # the length of metahead, table name entries and feildName sections
+        bufLen = META_HEAD_SIZE + TABLE_NAME_HEAD_SIZE + MAX_FIELD_SECTION_SIZE  # the length of meta head, table name entries and fieldName sections
         buf = ctypes.create_string_buffer(bufLen)
         struct.pack_into('!?ii', buf, 0, self.headObj.isStored, self.headObj.lenOfTableNum, self.headObj.offsetOfBody)
         #isStored, tempTableNum, tempOffset = struct.unpack_from('!?ii', buf,0)  # link:https://docs.python.org/2/library/struct.html
@@ -330,7 +330,7 @@ class Schema(object):
             if len(tmp_tableName)<10:
                 tmp_tableName = ' ' * (10 - len(tmp_tableName.strip())) + tmp_tableName
 
-            # write (tablename,numberoffields,offsetinbody) to buffer
+            # write (tableName,numberOfFields,offsetInBody) to buffer
             struct.pack_into('!10sii', buf, META_HEAD_SIZE + idx * TABLE_NAME_ENTRY_LEN, tmp_tableName,
                              self.headObj.tableNames[idx][1],self.headObj.tableNames[idx][2])
 
