@@ -4,14 +4,14 @@
 # modified by:Shuting Guo, shutingnjupt@gmail.com
 #------------------------------------------------
 
-'''
+"""
 mega_storage.py is to store table data in separate files.
 Each table is stored in a separate file with the suffix ".dat".
 For example, table named movie_star is stored in file movie_star.dat.
 As it is to demonstrate principles in chapter one, it is rather simple.
 The file is in ASCII text format, not binary one.
 Each line corresponds to one record and different field values are separated by |
-'''
+"""
 
 import os
 
@@ -38,7 +38,7 @@ class MegaStorage(object):
 			print (tableName + '.txt has been created')
 			self.num_of_fields = None
 
-		else:  # the file do exist
+		else:  # the file does exist
 
 			self.f_handle = open(tableName + '.txt', 'r+')  ##a
 			print ('table file ' + tableName + '.txt is opened now')
@@ -97,7 +97,7 @@ class MegaStorage(object):
 	# --------------------------------
 	# to delete one record from the table
 	# input
-	#       value_list: the list of field values of which each element is a tuple (field_name,new_field_value)
+	#       value_list: the list of field values of which each element is a tuple (field_name, new_field_value)
 	# Author: Shuting Guo
 	# -------------------------------
 	def del_one_record(self, value_list,field_name_list):
@@ -136,7 +136,7 @@ class MegaStorage(object):
 	# to update one record of the table
 	# input
 	#       condition_list: the where condition, of which each element is a tuple (field_name, field_value)
-	#       new_value_list: new value list, of which each element is a tuple (field_name,new_field_value)
+	#       new_value_list: new value list, of which each element is a tuple (field_name, new_field_value)
 	# -------------------------------
 
 	def update_record(self, condition_list, new_value_list,field_name_list):

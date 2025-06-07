@@ -1,7 +1,7 @@
-'''
+"""
 index_db.py
-in this module, B tree is implemented
-'''
+in this module, a B tree is implemented
+"""
 
 import struct
 
@@ -62,7 +62,7 @@ class Index(object):
     #------------------------------------
     # constructor of the class
     # input
-    #       tableName : the table to be indexed
+    #       tableName: the table to be indexed
     #-----------------------------------------
     def __init__(self, tableName):
 
@@ -115,7 +115,7 @@ class Index(object):
     #-----------------------------------
     def create_index(self,index_field):
         print ('create_index begins to execute')
-        #field_value_address=[] # its element is a tuple (field_value,address)
+        #field_value_address=[] # its element is a tuple (field_value, address)
         # to be inserted here
 
     #-----------------------------
@@ -133,14 +133,14 @@ class Index(object):
 
     
     #---------------------------------
-    # insert the index entry into main memory list, which needs to determine the position
+    # insert the index entry into the main memory list, which needs to determine the position
     # input
     #       inert_key
     #       insert_block_id
     #       insert_offset
     # output 
     #       key_list
-    #       ptr_list    : of which each element is a tuple (block_id,offset_id)
+    #       ptr_list    : of which each element is a tuple (block_id, offset_id)
     def insert_key_value_into_leaf_list(self,insert_key,ptr_tuple,key_list,ptr_list):
        
         if len(key_list)>0:
@@ -189,17 +189,17 @@ class Index(object):
 
                 
 
-                # to prepare the meta block node, which is stored in block 0
+                # to prepare the metaBlock node, which is stored in block 0
                 self.meta_index_block=ctypes.create_string_buffer(common_db.BLOCK_SIZE)
-                struct.pack_into('!i?ii',self.meta_index_block,0,0,True,1,1) #block_id,has_root,number of levels,root_node_ptr(block_id)
+                struct.pack_into('!i?ii',self.meta_index_block,0,0,True,1,1) # block_id, has_root, number of levels, root_node_ptr(block_id)
 
-                # record the meta information in the main memory data structures
+                # record the metaInformation in the main memory data structures
                 self.has_root=True
                 self.number_of_levels=1
                 self.root_node_ptr=1
 
 
-                # the following is to write data to index file
+                # the following is to write data to the index file
                 self.f_handle.seek(0)
                 self.f_handle.write(self.meta_index_block)
                 self.f_handle.write(first_index_block)
@@ -259,10 +259,10 @@ class Index(object):
                     current_index_block=self.f_handle.read(common_db.BLOCK_SIZE)
                     current_node_type,current_num_of_keys=struct.unpack_from('!ii',current_index_block,struct.calcsize('!i'))
                     
-                    if current_node_type==LEAF_NODE_TYPE:# it is leaf node
+                    if current_node_type==LEAF_NODE_TYPE:# it is a leaf node
                         if current_num_of_keys<MAX_NUM_OF_KEYS:# insert the value into the leaf node
 
-                            # the following is to read index entry into main memory list
+                            # the following is to read the index entry into the main memory list
                             key_list=[]
                             ptr_list=[]
                             for i in range(current_num_of_keys):
