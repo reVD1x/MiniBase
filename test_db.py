@@ -14,10 +14,10 @@ def test_dict():
     mydict['f2']=blist
     #print mydict
 
-    for mykey in mydict:
-        print (mykey)
-        for i in range(len(mydict[mykey])):
-            (name,x,y)=mydict[mykey][i]
+    for myKey in mydict:
+        print (myKey)
+        for i in range(len(mydict[myKey])):
+            (name,x,y)=mydict[myKey][i]
             print (name, x,y)
 
 

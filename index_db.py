@@ -62,22 +62,22 @@ class Index(object):
     #------------------------------------
     # constructor of the class
     # input
-    #       tablename : the table to be indexed
+    #       tableName : the table to be indexed
     #-----------------------------------------
-    def __init__(self,tablename):
+    def __init__(self, tableName):
 
         print ("__init__ of ",Index.__name__)
-        tablename.strip()
-        if  not os.path.exists(tablename+'.ind'): # in this case, the index file does not exist
+        tableName.strip()
+        if  not os.path.exists(tableName + '.ind'): # in this case, the index file does not exist
             
-            print ('index file '+tablename+'.ind does not exist')
-            self.f_handle=open(tablename+'.ind','wb+')
-            print (tablename+'.ind has been created')
+            print ('index file ' + tableName + '.ind does not exist')
+            self.f_handle=open(tableName + '.ind', 'wb+')
+            print (tableName + '.ind has been created')
             
         else: # the index file exists and we read its first block
             
-            self.f_handle=open(tablename+'.ind','rb+')
-            print ('index file '+tablename+'.ind has been opened')
+            self.f_handle=open(tableName + '.ind', 'rb+')
+            print ('index file ' + tableName + '.ind has been opened')
             self.open=True
 
             self.first_block_buf=ctypes.create_string_buffer(common_db.BLOCK_SIZE)
@@ -133,11 +133,11 @@ class Index(object):
 
     
     #---------------------------------
-    # insert the index entry into main memory list, which needs to determine the poistion
+    # insert the index entry into main memory list, which needs to determine the position
     # input
     #       inert_key
     #       insert_block_id
-    #       insert_oofset
+    #       insert_offset
     # output 
     #       key_list
     #       ptr_list    : of which each element is a tuple (block_id,offset_id)
@@ -221,7 +221,7 @@ class Index(object):
                     while(temp_count<self.num_of_levels-1):# to search through the internal nodes
                         
                         current_index_block=ctypes.create_string_buffer(common_db.BLOCK_SIZE)
-                        read_pos=next_node_ptr*common_db.BLOCK_SIZE # the begining of the target block
+                        read_pos=next_node_ptr*common_db.BLOCK_SIZE # the beginning of the target block
                         
                         self.f_handle.seek(read_pos)
                         current_index_block=self.f_handle.read(common_db.BLOCK_SIZE)
@@ -274,11 +274,11 @@ class Index(object):
 
                             # the following is to write the new index entry list to buffer
                             for i in range(len(key_list)):
-                                curent_key=key_list[i]
+                                current_key=key_list[i]
                                 (current_id,current_offset)=ptr_list[i]
                                 struct.pack_into('!10sii',current_index_block,struct.calcsize('!iii')+i*LEN_OF_LEAF_NODE,current_key,current_id,current_offset)
                                 
-                            # change the nmber_of_keys
+                            # change the number_of_keys
                             current_num_of_keys+=1
                             struct.pack_into('!i',current_index_block,8,current_num_of_keys)
                             

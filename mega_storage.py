@@ -1,5 +1,5 @@
 #------------------------------------------------
-# mega_stroage.py
+# mega_storage.py
 # author: Jingyu Han, hjymail@163.com
 # modified by:Shuting Guo, shutingnjupt@gmail.com
 #------------------------------------------------
@@ -7,7 +7,7 @@
 '''
 mega_storage.py is to store table data in separate files.
 Each table is stored in a separate file with the suffix ".dat".
-For example, table named moviestar is stored in file moviestar.dat.
+For example, table named movie_star is stored in file movie_star.dat.
 As it is to demonstrate principles in chapter one, it is rather simple.
 The file is in ASCII text format, not binary one.
 Each line corresponds to one record and different field values are separated by |
@@ -25,23 +25,23 @@ class MegaStorage(object):
 	# ------------------------------
 	# constructor of the class
 	# input:
-	#       tablename
+	#       tableName
 	# -------------------------------------
-	def __init__(self, tablename):  # each table coresponds to one file with suffix .dat
+	def __init__(self, tableName):  # each table corresponds to one file with suffix .dat
 		print ("__init__ of ", MegaStorage.__name__)
-		tablename.strip()
+		tableName.strip()
 		self.record_list = []  # a main memory list to store all the records
 
-		if not os.path.exists(tablename + '.txt'):  # the data file does not exist
-			print ('table file ' + tablename + '.txt does not exists')
-			self.f_handle = open(tablename + '.txt', 'w+')
-			print (tablename + '.txt has been created')
+		if not os.path.exists(tableName + '.txt'):  # the data file does not exist
+			print ('table file ' + tableName + '.txt does not exists')
+			self.f_handle = open(tableName + '.txt', 'w+')
+			print (tableName + '.txt has been created')
 			self.num_of_fields = None
 
 		else:  # the file do exist
 
-			self.f_handle = open(tablename + '.txt', 'r+')  ##a
-			print ('table file ' + tablename + '.txt is opened now')
+			self.f_handle = open(tableName + '.txt', 'r+')  ##a
+			print ('table file ' + tableName + '.txt is opened now')
 
 			# show the data in the table( file)
 			for each_line in self.f_handle:
@@ -127,15 +127,15 @@ class MegaStorage(object):
 	#--------------------------
 	# to delete the data file
 	#--------------------------
-	def delete_data_file(self,tablename):
-		if os.path.exists(tablename+'.txt'):
+	def delete_data_file(self, tableName):
+		if os.path.exists(tableName + '.txt'):
 			self.f_handle.close()
-			os.remove(tablename+'.txt')
+			os.remove(tableName + '.txt')
 
 	# --------------------------------
 	# to update one record of the table
 	# input
-	#       condition_list: the where conditon, of which each element is a tuple (field_name, field_value)
+	#       condition_list: the where condition, of which each element is a tuple (field_name, field_value)
 	#       new_value_list: new value list, of which each element is a tuple (field_name,new_field_value)
 	# -------------------------------
 
