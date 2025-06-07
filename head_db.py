@@ -14,16 +14,16 @@ class Header(object):
     # constructor of the class
     # input
     #   nameList    : table name list and each element of the list is a triple (table_name,num_of_fields, offset_in_body)
-    #   fieldDict   : field dictionary for all tables and each element is (tablename, fieldList) where fieldList is
-    #                    a list of fields and each field is a tuple(fieldname,fieldtype,fieldlength
+    #   fieldDict   : field dictionary for all tables and each element is (tableName, fieldList) where fieldList is
+    #                    a list of fields and each field is a tuple(fieldName,fieldType,fieldLength
     #   inLen       : number of tables
     #   off         : where the free space begins in body of the schema file
     #---------------------------------------------------------------
-    def __init__(self,nameList,fieldDict,inistored, inLen, off):
-        'constructor of Header'
+    def __init__(self, nameList, fieldDict, inIsStored, inLen, off):
+        """constructor of Header"""
         print ('__init__ of Header')
           
-        self.isStored=inistored # whether it is stored
+        self.isStored=inIsStored # whether it is stored
         self.lenOfTableNum=inLen # number of tables
         self.offsetOfBody=off
         self.tableNames=nameList

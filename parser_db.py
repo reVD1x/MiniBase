@@ -36,7 +36,7 @@ from lex_db import tokens
 # input:
 #       syntax tree
 # output:
-#       true or falise
+#       true or false
 #-----------------------------
 def check_syn_tree(syn_tree):
     if syn_tree:
@@ -54,7 +54,7 @@ def check_syn_tree(syn_tree):
 #       the root node of syntax tree
 #--------------------------------------      
 def p_expr_query(t):
-    'Query : SFW'
+    """Query : SFW"""
     
     t[0]=common_db.Node('Query',[t[1]])
     common_db.global_syn_tree=t[0]
@@ -64,14 +64,14 @@ def p_expr_query(t):
     return t
 
 #------------------------------
-#(1) construct the node for WFW expression
+#(1) construct the node for SFW expression
 # input:
 #       
 # output:
 #       the nodes
 #--------------------------------------   
-def p_expr_swf(t):
-    'SFW : SELECT SelList FROM FromList WHERE Cond'
+def p_expr_sfw(t):
+    """SFW : SELECT SelList FROM FromList WHERE Cond"""
     t[1]=common_db.Node('SELECT',None)
     t[3]=common_db.Node('FROM',None)
     t[5]=common_db.Node('WHERE',None)
@@ -89,8 +89,8 @@ def p_expr_swf(t):
 #       the nodes
 #--------------------------------------   
 
-def p_expr_sellist_first(t):
-    'SelList : TCNAME COMMA SelList'
+def p_expr_sel_list_first(t):
+    """SelList : TCNAME COMMA SelList"""
     
     
     t[1]=common_db.Node('TCNAME',[t[1]])
@@ -107,8 +107,8 @@ def p_expr_sellist_first(t):
 # output:
 #       the nodes
 #--------------------------------------   
-def p_expr_sellist_second(t):
-    'SelList : TCNAME'
+def p_expr_sel_list_second(t):
+    """SelList : TCNAME"""
    
     t[1]=common_db.Node('TCNAME',[t[1]])
     t[0]=common_db.Node('SelList',[t[1]])
@@ -124,7 +124,7 @@ def p_expr_sellist_second(t):
 #       the nodes
 #--------------------------------------   
 def p_expr_fromlist_first(t):
-    'FromList : TCNAME COMMA FromList'
+    """FromList : TCNAME COMMA FromList"""
     t[1]=common_db.Node('TCNAME',[t[1]])
     t[2]=common_db.Node(',',None)
     t[0]=common_db.Node('FromList',[t[1],t[2],t[3]])
@@ -140,7 +140,7 @@ def p_expr_fromlist_first(t):
 #       the nodes
 #--------------------------------------           
 def p_expr_fromlist_second(t):
-    'FromList : TCNAME'
+    """FromList : TCNAME"""
     t[1]=common_db.Node('TCNAME',[t[1]])
     t[0]=common_db.Node('FromList',[t[1]])    
     return t
@@ -153,7 +153,7 @@ def p_expr_fromlist_second(t):
 #       the nodes
 #--------------------------------------   
 def p_expr_condition(t):
-    'Cond : TCNAME EQX CONSTANT'
+    """Cond : TCNAME EQX CONSTANT"""
     t[1]=common_db.Node('TCNAME',[t[1]])
     t[2]=common_db.Node('=',None)
     t[3]=common_db.Node('CONSTANT',[t[3]])

@@ -47,7 +47,7 @@ class parseNode:
 
 #--------------------------------
 # Author: Shuting Guo shutingnjupt@gmail.com
-# to extract data from gloal variable syn_tree
+# to extract data from global variable syn_tree
 # output:
 #       sel_list
 #       from_list
@@ -75,34 +75,34 @@ def extract_sfw_data():
 # Condition: TCNAME EQX CONSTANT
 #---------------------------------
 
-def destruct(nodeobj,PN):
-    if isinstance(nodeobj, common_db.Node):  # it is a Node object
-        if nodeobj.children:
-            if nodeobj.value == 'SelList':
+def destruct(nodeObj, PN):
+    if isinstance(nodeObj, common_db.Node):  # it is a Node object
+        if nodeObj.children:
+            if nodeObj.value == 'SelList':
                 tmpList=[]
-                show(nodeobj,tmpList)
+                show(nodeObj, tmpList)
                 PN.update_sel_list(tmpList)
-            elif nodeobj.value == 'FromList':
+            elif nodeObj.value == 'FromList':
                 tmpList = []
-                show(nodeobj, tmpList)
+                show(nodeObj, tmpList)
                 PN.update_from_list(tmpList)
-            elif nodeobj.value == 'Cond':
+            elif nodeObj.value == 'Cond':
                 tmpList = []
-                show(nodeobj, tmpList)
+                show(nodeObj, tmpList)
                 PN.update_where_list(tmpList)
             else:
-                for i in range(len(nodeobj.children)):
-                    destruct(nodeobj.children[i],PN)
+                for i in range(len(nodeObj.children)):
+                    destruct(nodeObj.children[i], PN)
 
-def show(nodeobj,tmpList):
-    if isinstance(nodeobj,common_db.Node):
-        if not nodeobj.children:
-            tmpList.append(nodeobj.value)
+def show(nodeObj, tmpList):
+    if isinstance(nodeObj, common_db.Node):
+        if not nodeObj.children:
+            tmpList.append(nodeObj.value)
         else:
-            for i in range(len(nodeobj.children)):
-                show(nodeobj.children[i],tmpList)
-    if isinstance(nodeobj,str):
-        tmpList.append(nodeobj)
+            for i in range(len(nodeObj.children)):
+                show(nodeObj.children[i], tmpList)
+    if isinstance(nodeObj, str):
+        tmpList.append(nodeObj)
 
 
 #---------------------------
@@ -163,7 +163,7 @@ def construct_select_node(wf_node,sel_list):
 
 def execute_logical_tree():
     if common_db.global_logical_tree:
-        def excute_tree():
+        def execute_tree():
 
             idx = 0
             dict_ = {}
@@ -288,7 +288,7 @@ def execute_logical_tree():
                         return outPutField, current_list, True
                 idx -= 1
 
-        outPutField, current_list, isRight = excute_tree()
+        outPutField, current_list, isRight = execute_tree()
 
         if isRight:
             print (outPutField)

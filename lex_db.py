@@ -12,7 +12,7 @@ import common_db
 
 tokens=('SELECT','FROM','WHERE','AND','TCNAME','EQX','COMMA','CONSTANT','SPACE')
 
-# the following is to defining rules for each token
+# the following is defining rules for each token
 def t_SELECT(t):
     r'select'
     return t

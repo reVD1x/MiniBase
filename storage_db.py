@@ -4,10 +4,10 @@
 # -----------------------------------------------------------------------
 # the module is to store tables in files
 # Each table is stored in a separate file with the suffix ".dat".
-# For example, the table named moviestar is stored in file moviestar.dat 
+# For example, the table named movie_star is stored in file movie_star.dat
 # -----------------------------------------------------------------------
 
-# struct of file is as follows, each block is 4096
+# struct of the file is as follows, each block is 4096
 # ---------------------------------------------------
 # block_0|block_1|...|block_n
 # ----------------------------------------------------------------
@@ -23,7 +23,7 @@ from common_db import BLOCK_SIZE
 
 # the data type is as follows
 # ----------------------------------------------------------
-# 0->str,1->varstr,2->int,3->bool
+# 0->str,1->varStr,2->int,3->bool
 # ---------------------------------------------------------------
 
 
@@ -44,7 +44,7 @@ from common_db import BLOCK_SIZE
 # record_0
 # -------------------------------------------
 
-# structre of one record
+# structure of one record
 # -----------------------------
 # pointer                     #offset of table schema in block id 0
 # length of record            # including record head and record content
@@ -71,24 +71,24 @@ class Storage(object):
     # ------------------------------
     # constructor of the class
     # input:
-    #       tablename
+    #       tableName
     # -------------------------------------
-    def __init__(self, tablename):
+    def __init__(self, tableName):
         # print "__init__ of ",Storage.__name__,"begins to execute"
-        tablename.strip()
+        tableName.strip()
 
         self.record_list = []
         self.record_Position = []
 
-        if not os.path.exists(tablename + '.dat'.encode('utf-8')):  # the file corresponding to the table does not exist
-            print('table file '.encode('utf-8') + tablename + '.dat does not exists'.encode('utf-8'))
-            self.f_handle = open(tablename + '.dat'.encode('utf-8'), 'wb+')
+        if not os.path.exists(tableName + '.dat'.encode('utf-8')):  # the file corresponding to the table does not exist
+            print('table file '.encode('utf-8') + tableName + '.dat does not exists'.encode('utf-8'))
+            self.f_handle = open(tableName + '.dat'.encode('utf-8'), 'wb+')
             self.f_handle.close()
             self.open = False
-            print(tablename + '.dat has been created'.encode('utf-8'))
+            print(tableName + '.dat has been created'.encode('utf-8'))
 
-        self.f_handle = open(tablename + '.dat'.encode('utf-8'), 'rb+')
-        print('table file '.encode('utf-8') + tablename + '.dat has been opened'.encode('utf-8'))
+        self.f_handle = open(tableName + '.dat'.encode('utf-8'), 'rb+')
+        print('table file '.encode('utf-8') + tableName + '.dat has been opened'.encode('utf-8'))
         self.open = True
 
         self.dir_buf = ctypes.create_string_buffer(BLOCK_SIZE)
@@ -100,13 +100,13 @@ class Storage(object):
         self.field_name_list = []
         beginIndex = 0
 
-        if my_len == 0:  # there is no data in the block 0, we should write meta data into the block 0
-            if isinstance(tablename, bytes):
+        if my_len == 0:  # there is no data in block 0, we should write metaData into block 0
+            if isinstance(tableName, bytes):
                 self.num_of_fields = input(
-                    "please input the number of feilds in table " + tablename.decode('utf-8') + ":")
+                    "please input the number of fields in table " + tableName.decode('utf-8') + ":")
             else:
                 self.num_of_fields = input(
-                    "please input the number of feilds in table " + tablename + ":")
+                    "please input the number of fields in table " + tableName + ":")
             if int(self.num_of_fields) > 0:
 
                 self.dir_buf = ctypes.create_string_buffer(BLOCK_SIZE)
@@ -126,7 +126,7 @@ class Storage(object):
 
                     while True:
                         field_type = input(
-                            "please input the type of field(0-> str; 1-> varstr; 2-> int; 3-> boolean) " + str(
+                            "please input the type of field(0-> str; 1-> varStr; 2-> int; 3-> boolean) " + str(
                                 i) + " :")
                         if int(field_type) in [0, 1, 2, 3]:
                             break
@@ -154,11 +154,11 @@ class Storage(object):
             print('data_block_num', self.data_block_num)
             beginIndex = struct.calcsize('!iii')
 
-            # the followins is to read field name, field type and field length into main memory structures
+            # the followings are to read field name, field type and field length into main memory structures
             for i in range(self.num_of_fields):
                 field_name, field_type, field_length = struct.unpack_from('!10sii', self.dir_buf,
                                                                           beginIndex + i * struct.calcsize(
-                                                                              '!10sii'))  # i means no memory alignment
+                                                                              '!10sii'))  # 'i' means no memory alignment
 
                 temp_tuple = (field_name, field_type, field_length)
                 self.field_name_list.append(temp_tuple)
@@ -174,7 +174,7 @@ class Storage(object):
             self.active_data_buf = self.f_handle.read(BLOCK_SIZE)
             self.block_id, self.Number_of_Records = struct.unpack_from('!ii', self.active_data_buf, 0)
             print('Block_ID=%s,   Contains %s data' % (self.block_id, self.Number_of_Records))
-            # There exists record
+            # There exists a record
             if self.Number_of_Records > 0:
                 for i in range(self.Number_of_Records):
                     self.record_Position.append((Flag, i))
@@ -214,7 +214,7 @@ class Storage(object):
 
         # example: ['xuyidan','23','123456']
 
-        # step 1 : to check the insert_record is True or False
+        # step 1: to check the insert_record is True or False
 
         tmpRecord = []
         for idx in range(len(self.field_name_list)):
@@ -235,13 +235,13 @@ class Storage(object):
                     return False
             insert_record[idx] = ' ' * (self.field_name_list[idx][2] - len(insert_record[idx])) + insert_record[idx]
 
-        # step2: Add tmpRecord to record_list ; change insert_record into inputstr
-        inputstr = ''.join(insert_record)
+        # step2: Add tmpRecord to record_list; change insert_record into inputStr
+        inputStr = ''.join(insert_record)
 
         self.record_list.append(tuple(tmpRecord))
 
         # Step3: To calculate MaxNum in each Data Blocks
-        record_content_len = len(inputstr)
+        record_content_len = len(inputStr)
         record_head_len = struct.calcsize('!ii10s')
         record_len = record_head_len + record_content_len
         MAX_RECORD_NUM = (BLOCK_SIZE - struct.calcsize('!i') - struct.calcsize('!ii')) / (
@@ -291,7 +291,7 @@ class Storage(object):
         self.f_handle.seek(BLOCK_SIZE * last_Position[0] + beginIndex)
         self.buf = ctypes.create_string_buffer(record_len)
         struct.pack_into('!ii10s', self.buf, 0, record_schema_address, record_content_len, update_time.encode('utf-8'))
-        struct.pack_into('!' + str(record_content_len) + 's', self.buf, record_head_len, inputstr.encode('utf-8'))
+        struct.pack_into('!' + str(record_content_len) + 's', self.buf, record_head_len, inputStr.encode('utf-8'))
         self.f_handle.write(self.buf.raw)
         self.f_handle.flush()
 
@@ -343,7 +343,7 @@ class Storage(object):
     # ----------------------------------------
     # destructor
     # ------------------------------------------------
-    def __del__(self):  # write the metahead information in head object to file
+    def __del__(self):  # write the metaHead information in the head object to file
 
         if self.open == True:
             self.f_handle.seek(0)
