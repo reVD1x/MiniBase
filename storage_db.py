@@ -320,7 +320,7 @@ class Storage(object):
     def delete_table_data(self, tableName):
 
         # step 1: identify whether the file is still open
-        if self.open == True:
+        if self.open:
             self.f_handle.close()
             self.open = False
 
@@ -345,7 +345,7 @@ class Storage(object):
     # ------------------------------------------------
     def __del__(self):  # write the metaHead information in the head object to file
 
-        if self.open == True:
+        if self.open:
             self.f_handle.seek(0)
             self.buf = ctypes.create_string_buffer(struct.calcsize('!ii'))
             struct.pack_into('!ii', self.buf, 0, 0, self.data_block_num)

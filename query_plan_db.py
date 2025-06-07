@@ -204,7 +204,7 @@ def execute_logical_tree():
             current_field = []
             current_list =[]
             #print dict_
-            while (idx >= 0):
+            while idx >= 0:
                 if idx == sorted(dict_.keys(), reverse=True)[0]:
                     if len(dict_[idx]) > 1:
                         a_1 = storage_db.Storage(dict_[idx][0])

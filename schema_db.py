@@ -144,7 +144,7 @@ class Schema(object):
             fieldsList = {}
             # it is a dictionary
 
-            if isStored == False:  # only the meta head exists, but there is no table information in the schema file
+            if not isStored:  # only the meta head exists, but there is no table information in the schema file
                 self.headObj = head_db.Header(nameList, fieldsList, False, 0, BODY_BEGIN_INDEX)
                 print("there is no table in the file")
 

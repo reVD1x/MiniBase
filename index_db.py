@@ -5,7 +5,7 @@ in this module, a B tree is implemented
 
 import struct
 
-# The 0 block stores the meta information of the tree
+# The 0-block stores the meta information of the tree
 '''
 block_id|has_root|num_of_levels|root_node_ptr
 # note: the root_node_ptr is a block id
@@ -218,7 +218,7 @@ class Index(object):
                     temp_count=0
                     next_node_ptr=self.root_node_ptr
                     
-                    while(temp_count<self.num_of_levels-1):# to search through the internal nodes
+                    while temp_count<self.num_of_levels-1:# to search through the internal nodes
                         
                         current_index_block=ctypes.create_string_buffer(common_db.BLOCK_SIZE)
                         read_pos=next_node_ptr*common_db.BLOCK_SIZE # the beginning of the target block
@@ -316,7 +316,7 @@ class Index(object):
 
 
 # the following is to test
-index_obj=Index('all');
+index_obj=Index('all')
 index_obj.insert_index_entry('a',4,1)
 #test()
 
