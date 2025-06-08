@@ -84,15 +84,17 @@ class Schema(object):
     # ------------------------------
     def viewTableStructure(self, table_name):
         print('the structure of table '.encode('utf-8') + table_name + ' is as follows:'.encode('utf-8'))
-        '''
+
         tmp=[]
         for i in range(len(self.headObj.tableNames)):
             if self.headObj.tableNames[i][0] == table_name:
-                tmp = [j.strip() for j in self.headObj.tableFields[i]]
-                print '|'.join(tmp)
+                tmp = [j[0].strip() for j in self.headObj.tableFields[table_name.strip()]]
+                print ('|'.join(tmp))
                 return tmp
-        '''
+
         # to be inserted here
+        print('Cannot find the table '.encode('utf-8') + table_name + ' in the schema file'.encode('utf-8'))
+        return tmp
 
     # ------------------------------------------------
     # constructor of the class
@@ -130,7 +132,7 @@ class Schema(object):
 
         else:  # there is something in the schema file
 
-            print("there is something  in the all.sch")
+            print("there is something in the all.sch")
             # in the following ? denotes bool type and 'i' denotes an int type
             isStored, tempTableNum, tempOffset = struct.unpack_from('!?ii', buf,
                                                                     0)  # link:https://docs.python.org/2/library/struct.html
@@ -141,8 +143,7 @@ class Schema(object):
 
             Schema.body_begin_index = tempOffset
             nameList = []
-            fieldsList = {}
-            # it is a dictionary
+            fieldsList = {} # it is a dictionary
 
             if not isStored:  # only the meta head exists, but there is no table information in the schema file
                 self.headObj = head_db.Header(nameList, fieldsList, False, 0, BODY_BEGIN_INDEX)
@@ -214,7 +215,7 @@ class Schema(object):
     # delete all the contents in the schema file
     # ----------------------------------------
     def deleteAll(self):
-        self.headObj.tableFields = []
+        self.headObj.tableFields = {}
         self.headObj.tableNames = []
         self.fileObj.seek(0)
         self.fileObj.truncate(0)
@@ -232,7 +233,7 @@ class Schema(object):
     # -------------------------------
     def appendTable(self, tableName, fieldList):  # it modifies the tableNameHead and body of all.sch
         print("appendTable begins to execute")
-        tableName.strip()
+        tableName = tableName.strip()
 
         if len(tableName) == 0 or len(tableName) > 10 or len(fieldList) == 0:
             print('table name is invalid or field list is invalid')
@@ -381,3 +382,4 @@ class Schema(object):
     # --------------------------------
     def get_table_name_list(self):
         return map(lambda x: x[0], self.headObj.tableNames)
+

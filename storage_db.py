@@ -75,7 +75,7 @@ class Storage(object):
     # -------------------------------------
     def __init__(self, tableName):
         # print "__init__ of ",Storage.__name__,"begins to execute"
-        tableName.strip()
+        tableName=tableName.strip()
 
         self.record_list = []
         self.record_Position = []

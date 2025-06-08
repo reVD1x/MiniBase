@@ -52,9 +52,9 @@ def main():
                 # Create a new table
                 dataObj = storage_db.Storage(tableName)
 
-                insertFieldList = dataObj.getFieldList()
+                insertFieldList = dataObj.getFieldList()    # get the field list from the data file
 
-                schemaObj.appendTable(tableName, insertFieldList)  # add the table structure
+                schemaObj.appendTable(tableName, insertFieldList)   # add the table structure to schema file
             else:
                 dataObj = storage_db.Storage(tableName)
 
@@ -128,11 +128,11 @@ def main():
             # to be inserted here -> to delete from data files
             for i in range(len(table_name_list)):
                 table_name = table_name_list[i]
-                table_name.strip()
+                table_name = table_name.strip()
 
                 if table_name:
                     stObj = storage_db.Storage(table_name)
-                    stObj.delete_table_data(table_name.strip())  # delete table data
+                    stObj.delete_table_data(table_name)  # delete table data
                     del stObj
 
             schemaObj.deleteAll()  # delete schema from schema file
@@ -189,5 +189,6 @@ def main():
 
 if __name__ == '__main__':
     main()
+
 
 
