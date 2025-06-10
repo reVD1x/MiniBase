@@ -247,14 +247,19 @@ class Schema(object):
             beginIndex = 0
             for i in range(len(fieldList)):
                 (fieldName, fieldType, fieldLength) = fieldList[i]
-                if len(fieldName.strip()) < 10:
-                    if isinstance(fieldName, str):
-                        fieldName = fieldName.encode('utf-8')
-                    filledFieldName = (' ' * (MAX_FIELD_LEN - len(fieldName.strip()))).encode('utf-8') + fieldName
-                if isinstance(filledFieldName, str):
-                    filledFieldName = filledFieldName.encode('utf-8')
-                struct.pack_into('!10sii', fieldBuff, beginIndex, filledFieldName, int(fieldType), int(fieldLength))
+                # 确保字段名是字节类型
+                if isinstance(fieldName, str):
+                    fieldName = fieldName.encode('utf-8')
 
+                # 正确处理字段名填充 - 先去掉空格，然后用前导空格填充到10字节
+                fieldName = fieldName.strip()
+                if len(fieldName) < 10:
+                    filledFieldName = (' ' * (10 - len(fieldName))).encode('utf-8') + fieldName
+                else:
+                    filledFieldName = fieldName[:10]  # 截断过长的字段名
+
+                # 打包字段信息到缓冲区
+                struct.pack_into('!10sii', fieldBuff, beginIndex, filledFieldName, int(fieldType), int(fieldLength))
                 beginIndex = beginIndex + MAX_FIELD_LEN
 
             writePos = self.headObj.offsetOfBody
@@ -263,7 +268,7 @@ class Schema(object):
             self.fileObj.write(fieldBuff)
             self.fileObj.flush()
 
-            # self.headObj.offsetOfBody=self.headObj.offsetBody+fieldNum*MAX_FIELD_LEN
+            # self.headObj.offsetOfBody=self.headObj.offsetOfBody+fieldNum*MAX_FIELD_LEN
 
             print("the following is to write table name entry to tableNameHead in all.sch")
             filledTableName = fillTableName(tableName)
@@ -383,4 +388,3 @@ class Schema(object):
     # --------------------------------
     def get_table_name_list(self):
         return map(lambda x: x[0], self.headObj.tableNames)
-
