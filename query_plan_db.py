@@ -397,14 +397,72 @@ def construct_logical_tree():
         comma = b','
         sel_list = [i for i in sel_list if i != comma]
         from_list = [i for i in from_list if i != comma]
-        where_list = tuple(where_list)
+
+        # 确保 where_list 是一个元组，即使是空的
+        if where_list:
+            where_list = tuple(where_list)
+        else:
+            where_list = tuple()  # 空元组表示没有 WHERE 条件
+            print('No WHERE clause detected')
 
         print('Selection list:', sel_list)
         print('From list:', from_list)
         print('Where list:', where_list)
 
-        if not sel_list or not from_list:
-            print('Warning: Selection list or From list is empty')
+        if not from_list:
+            print('Warning: From list is empty')
+            return
+
+        # 检查选择列表中是否包含星号（*）
+        has_star = False
+        for item in sel_list:
+            if isinstance(item, bytes) and item.strip() == b'*':
+                has_star = True
+                break
+            elif isinstance(item, str) and item.strip() == '*':
+                has_star = True
+                break
+
+        # 如果包含星号，则展开为所有字段
+        if has_star:
+            print('发现星号查询，展开为所有字段...')
+            expanded_sel_list = []
+
+            for table_name in from_list:
+                try:
+                    # 确保表名是字节型
+                    if isinstance(table_name, str):
+                        table_name_bytes = table_name.encode('utf-8')
+                    else:
+                        table_name_bytes = table_name
+
+                    # 创建Storage对象获取表的所有字段
+                    storage_obj = storage_db.Storage(table_name_bytes)
+                    field_list = storage_obj.getfilenamelist()
+
+                    # 为每个字段生成完整的字段引用（表名.字段名）
+                    for field in field_list:
+                        field_name = field[0].strip()
+                        if isinstance(field_name, str):
+                            field_name = field_name.encode('utf-8')
+
+                        # 创建表名.字段名格式的引用
+                        qualified_field = table_name_bytes.strip() + b'.' + field_name
+                        expanded_sel_list.append(qualified_field)
+
+                except Exception as e:
+                    print(f"获取表 {table_name} 的字段时出错: {str(e)}")
+
+            # 用展开后的字段列表替换原始的选择列表
+            if expanded_sel_list:
+                print(f"星号已展开为以下字段: {expanded_sel_list}")
+                sel_list = expanded_sel_list
+            else:
+                print("警告: 无法展开星号，没有找到可用字段")
+                return
+
+        if not sel_list:
+            print('Warning: Selection list is empty')
             return
 
         from_node = construct_from_node(from_list)
@@ -416,9 +474,11 @@ def construct_logical_tree():
 
         where_node = construct_where_node(from_node, where_list)
         if where_node:
-            print('Where node constructed successfully')
+            print('Where/From node constructed successfully')
+            if len(where_list) == 0:
+                print('查询不包含 WHERE 子句，将显示所有记录')
         else:
-            print('Failed to construct Where node')
+            print('Failed to construct Where/From node')
             return
 
         common_db.global_logical_tree = construct_select_node(where_node, sel_list)

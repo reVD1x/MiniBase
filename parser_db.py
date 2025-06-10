@@ -84,6 +84,26 @@ def p_expr_sfw(t):
     return t
 
 #------------------------------
+# 为不带 WHERE 子句的 SFW 表达式构造节点
+# input:
+#
+# output:
+#       the nodes
+#--------------------------------------
+def p_expr_sfw_no_where(t):
+    """SFW : SELECT SelList FROM FromList"""
+    t[1] = common_db.Node(b'SELECT', None)
+    t[3] = common_db.Node(b'FROM', None)
+
+    # 为不带 WHERE 子句的查询创建一个空的条件节点
+    empty_cond = common_db.Node(b'Cond', None)
+
+    # 构造与标准 SFW 相同结构的节点，但使用空条件
+    t[0] = common_db.Node(b'SFW', [t[1], t[2], t[3], t[4], common_db.Node(b'WHERE', None), empty_cond])
+
+    return t
+
+#------------------------------
 #construct the node for select list
 # input:
 #       
@@ -122,6 +142,12 @@ def p_expr_sel_list_second(t):
 
     return t
 
+# 在原有的p_expr_sel_list_second之后添加一个新规则来处理星号
+def p_expr_sel_list_star(t):
+    """SelList : STAR"""
+    # 将星号作为特殊标记放入语法树
+    t[0] = common_db.Node(b'SelList', [common_db.Node(b'*', None)])
+    return t
 
 #---------------------------
 #construct the node for from expression
