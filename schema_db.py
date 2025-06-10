@@ -89,7 +89,13 @@ class Schema(object):
         for i in range(len(self.headObj.tableNames)):
             if self.headObj.tableNames[i][0] == table_name:
                 separate = b'|'
-                tmp = [j[0].strip() for j in self.headObj.tableFields[table_name.strip()]]
+                for j in self.headObj.tableFields[table_name.strip()]:
+                    if isinstance(j[0], str):
+                        field_name_bytes = j[0].encode('utf-8')
+                    else:
+                        field_name_bytes = j[0]
+                    field_name_bytes = field_name_bytes.strip()
+                    tmp.append(field_name_bytes)
                 print (separate.join(tmp))
                 return tmp
 

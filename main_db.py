@@ -56,34 +56,34 @@ def main():
             else:
                 dataObj = storage_db.Storage(tableName)
 
-            try:
-                # 开始事务
-                dataObj.begin_transaction()
+                try:
+                    # 开始事务
+                    dataObj.begin_transaction()
 
-                # 收集记录数据
-                record = []
-                Field_List = dataObj.getFieldList()
-                for x in Field_List:
-                    s = 'Input field name is: ' + str(x[0].strip()) + '  field type is: ' + str(x[1]) + \
-                        ' field maximum length is: ' + str(x[2]) + '\n'
-                    record.append(input(s))
+                    # 收集记录数据
+                    record = []
+                    Field_List = dataObj.getFieldList()
+                    for x in Field_List:
+                        s = 'Input field name is: ' + str(x[0].strip()) + '  field type is: ' + str(x[1]) + \
+                            ' field maximum length is: ' + str(x[2]) + '\n'
+                        record.append(input(s))
 
-                if dataObj.insert_record(record):  # add a row
-                    # 提交事务
-                    dataObj.commit_transaction()
-                    print('OK!')
-                else:
-                    # 回滚事务
-                    dataObj.rollback_transaction()
-                    print('Wrong input!')
+                    if dataObj.insert_record(record):  # add a row
+                        # 提交事务
+                        dataObj.commit_transaction()
+                        print('OK!')
+                    else:
+                        # 回滚事务
+                        dataObj.rollback_transaction()
+                        print('Wrong input!')
 
-            except Exception as e:
-                if dataObj:
-                    dataObj.rollback_transaction()
-                print(f'Error: {str(e)}')
-            finally:
-                if dataObj:
-                    del dataObj
+                except Exception as e:
+                    if dataObj:
+                        dataObj.rollback_transaction()
+                    print(f'Error: {str(e)}')
+                finally:
+                    if dataObj:
+                        del dataObj
 
             choice = input(PROMPT_STR)
 
