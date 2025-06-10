@@ -1,30 +1,28 @@
-#------------------------------------------------
+# ------------------------------------------------
 # query_plan_db.py
 # author: Jingyu Han  hjymail@163.com
 # modified by:Shuting Guo shutingnjupt@gmail.com
-#------------------------------------------------
+# ------------------------------------------------
 
 
-
-#----------------------------------------------------------
+# ----------------------------------------------------------
 # this module can turn a syntax tree into a query plan tree
-#----------------------------------------------------------
+# ----------------------------------------------------------
 
 import common_db
 import storage_db
 import itertools
-    
 
-#--------------------------------
-# to import the syntax tree, which is defined in parser_db.py
-#-------------------------------------------
-from common_db import global_syn_tree as syn_tree
+# --------------------------------
+# 不直接导入global_syn_tree，而是在需要时通过common_db.global_syn_tree引用
+# -------------------------------------------
+
 
 class parseNode:
     def __init__(self):
-        self.sel_list=[]
-        self.from_list=[]
-        self.where_list=[]
+        self.sel_list = []
+        self.from_list = []
+        self.where_list = []
 
     def get_sel_list(self):
         return self.sel_list
@@ -35,35 +33,36 @@ class parseNode:
     def get_where_list(self):
         return self.where_list
 
-    def update_sel_list(self,self_list):
+    def update_sel_list(self, self_list):
         self.sel_list = self_list
 
     def update_from_list(self, from_list):
         self.from_list = from_list
 
-    def update_where_list(self,where_list):
+    def update_where_list(self, where_list):
         self.where_list = where_list
 
 
-#--------------------------------
+# --------------------------------
 # Author: Shuting Guo shutingnjupt@gmail.com
 # to extract data from global variable syn_tree
 # output:
 #       sel_list
 #       from_list
 #       where_list
-#--------------------------------
+# --------------------------------
 def extract_sfw_data():
     print('extract_sfw_data begins to execute')
-    if syn_tree is None:
-        print ('wrong')
+    if common_db.global_syn_tree is None:
+        print('wrong')
     else:
-        common_db.show(syn_tree)
+        common_db.show(common_db.global_syn_tree)
         PN = parseNode()
-        destruct(syn_tree,PN)
-        return PN.get_sel_list(),PN.get_from_list(),PN.get_where_list()
+        destruct(common_db.global_syn_tree, PN)
+        return PN.get_sel_list(), PN.get_from_list(), PN.get_where_list()
 
-#---------------------------------
+
+# ---------------------------------
 # Author: Shuting Guo shutingnjupt@gmail.com
 # Query  : SFW
 #   SFW  : SELECT SelList FROM FromList WHERE Condition
@@ -73,93 +72,111 @@ def extract_sfw_data():
 # FromList:TCNAME COMMA FromList
 # FromList:TCNAME
 # Condition: TCNAME EQX CONSTANT
-#---------------------------------
+# ---------------------------------
 
 def destruct(nodeObj, PN):
     if isinstance(nodeObj, common_db.Node):  # it is a Node object
         if nodeObj.children:
-            if nodeObj.value == 'SelList':
-                tmpList=[]
+            # 确保比较的是字节字符串
+            node_value = nodeObj.value
+            if isinstance(node_value, str):
+                node_value = node_value.encode('utf-8')
+
+            # 使用字节字符串比较
+            if node_value == b'SelList':
+                tmpList = []
                 show(nodeObj, tmpList)
+                print("Found SelList, extracted:", tmpList)
                 PN.update_sel_list(tmpList)
-            elif nodeObj.value == 'FromList':
+            elif node_value == b'FromList':
                 tmpList = []
                 show(nodeObj, tmpList)
+                print("Found FromList, extracted:", tmpList)
                 PN.update_from_list(tmpList)
-            elif nodeObj.value == 'Cond':
+            elif node_value == b'Cond':
                 tmpList = []
                 show(nodeObj, tmpList)
+                print("Found Cond, extracted:", tmpList)
                 PN.update_where_list(tmpList)
             else:
                 for i in range(len(nodeObj.children)):
                     destruct(nodeObj.children[i], PN)
 
+
 def show(nodeObj, tmpList):
     if isinstance(nodeObj, common_db.Node):
         if not nodeObj.children:
-            tmpList.append(nodeObj.value)
+            # 确保添加到列表中的值是字节串
+            if isinstance(nodeObj.value, str):
+                tmpList.append(nodeObj.value.encode('utf-8'))
+            else:
+                tmpList.append(nodeObj.value)
         else:
             for i in range(len(nodeObj.children)):
                 show(nodeObj.children[i], tmpList)
     if isinstance(nodeObj, str):
+        tmpList.append(nodeObj.encode('utf-8'))
+    elif isinstance(nodeObj, bytes):
         tmpList.append(nodeObj)
 
 
-#---------------------------
-#input:
+# ---------------------------
+# input:
 #       from_list
-#output:
+# output:
 #       a tree
-#-----------------------------------
-        
-def construct_from_node(from_list):
-    if from_list:        
-        if len(from_list)==1:
-            temp_node=common_db.Node(from_list[0],None)
-            return common_db.Node('X',[temp_node])
-        elif len(from_list)==2:
-            temp_node_first=common_db.Node(from_list[0],None)
-            temp_node_second=common_db.Node(from_list[1],None)
-            
-            return common_db.Node('X',[temp_node_first,temp_node_second])       
-            
-        elif len(from_list)>2:
-            
-            right_node=common_db.Node(from_list[len(from_list)-1],None)
-            
-            return common_db.Node('X',[construct_from_node(from_list[0:len(from_list)-1]),right_node])
+# -----------------------------------
 
-#---------------------------
-#input:
+def construct_from_node(from_list):
+    if from_list:
+        if len(from_list) == 1:
+            temp_node = common_db.Node(from_list[0], None)
+            return common_db.Node('X', [temp_node])
+        elif len(from_list) == 2:
+            temp_node_first = common_db.Node(from_list[0], None)
+            temp_node_second = common_db.Node(from_list[1], None)
+
+            return common_db.Node('X', [temp_node_first, temp_node_second])
+
+        elif len(from_list) > 2:
+
+            right_node = common_db.Node(from_list[len(from_list) - 1], None)
+
+            return common_db.Node('X', [construct_from_node(from_list[0:len(from_list) - 1]), right_node])
+
+
+# ---------------------------
+# input:
 #       where_list
 #       from_node
-#output:
+# output:
 #       a tree
-#-----------------------------------
-def construct_where_node(from_node,where_list):
-    if from_node and len(where_list)>0:
-       return common_db.Node('Filter',[from_node],where_list)
-    elif from_node and len(where_list)==0:# there is no where clause
+# -----------------------------------
+def construct_where_node(from_node, where_list):
+    if from_node and len(where_list) > 0:
+        return common_db.Node('Filter', [from_node], where_list)
+    elif from_node and len(where_list) == 0:  # there is no where clause
         return from_node
 
 
-#---------------------------
-#input:
+# ---------------------------
+# input:
 #       sel_list
 #       wf_node
-#output:
+# output:
 #       a tree
-#-----------------------------------
-def construct_select_node(wf_node,sel_list):
-    if wf_node and len(sel_list)>0:
-        return common_db.Node('Proj',[wf_node],sel_list)
+# -----------------------------------
+def construct_select_node(wf_node, sel_list):
+    if wf_node and len(sel_list) > 0:
+        return common_db.Node('Proj', [wf_node], sel_list)
 
-#----------------------------------
+
+# ----------------------------------
 # Author: Shuting Guo shutingnjupt@gmail.com
 # to execute the query plan and return the result
 # input
 #       global logical tree
-#---------------------------------------------
+# ---------------------------------------------
 
 def execute_logical_tree():
     if common_db.global_logical_tree:
@@ -182,18 +199,42 @@ def execute_logical_tree():
             idx = sorted(dict_.keys(), reverse=True)[0]
 
             def GetFilterParam(tableName_Order, current_field, param):
-                # print tableName_Order,current_field
-                if '.' in param:
-                    tableName = param.split('.')[0]
-                    FieldName = param.split('.')[1]
-                    if tableName in tableName_Order:
-                        TableIndex = tableName_Order.index(tableName)
+                # 确保param是字节串
+                if isinstance(param, str):
+                    param = param.encode('utf-8')
+
+                # 确保使用字节串进行所有操作
+                dot = b'.'
+                if dot in param:
+                    tableName = param.split(dot)[0]
+                    FieldName = param.split(dot)[1]
+
+                    # 确保tableName_Order中的表名也是字节串以进行一致比较
+                    tableName_Order_bytes = []
+                    for name in tableName_Order:
+                        if isinstance(name, str):
+                            tableName_Order_bytes.append(name.encode('utf-8'))
+                        else:
+                            tableName_Order_bytes.append(name)
+
+                    if tableName in tableName_Order_bytes:
+                        TableIndex = tableName_Order_bytes.index(tableName)
+                    else:
+                        return 0, 0, 0, False
                 elif len(tableName_Order) == 1:
                     TableIndex = 0
                     FieldName = param
                 else:
                     return 0, 0, 0, False
-                tmp = list(map(lambda x: x[0].strip(), current_field[TableIndex]))
+
+                # 确保字段名比较一致性
+                tmp = []
+                for field in current_field[TableIndex]:
+                    if isinstance(field[0], str):
+                        tmp.append(field[0].strip().encode('utf-8'))
+                    else:
+                        tmp.append(field[0].strip())
+
                 if FieldName in tmp:
                     FieldIndex = tmp.index(FieldName)
                     FieldType = current_field[TableIndex][FieldIndex][1]
@@ -202,8 +243,8 @@ def execute_logical_tree():
                     return 0, 0, 0, False
 
             current_field = []
-            current_list =[]
-            #print dict_
+            current_list = []
+            # print dict_
             while idx >= 0:
                 if idx == sorted(dict_.keys(), reverse=True)[0]:
                     if len(dict_[idx]) > 1:
@@ -220,7 +261,7 @@ def execute_logical_tree():
 
                         tableName_Order = [dict_[idx][0]]
                         current_field = [a_1.getfilenamelist()]
-                        #print current_list
+                        # print current_list
 
                 elif 'X' in dict_[idx] and len(dict_[idx]) > 1:
                     a_2 = storage_db.Storage(dict_[idx][1])
@@ -244,8 +285,16 @@ def execute_logical_tree():
                             elif FieldType == 3:
                                 FilterParam = bool(FilterChoice[2].strip())
                             else:
-                                FilterParam = FilterChoice[2].strip()
-                            #print FilterParam
+                                # 处理字符串类型，确保是字节串且去掉引号
+                                if isinstance(FilterChoice[2], bytes):
+                                    # 去掉可能存在的引号
+                                    FilterParam = FilterChoice[2].strip().replace(b"'", b"").replace(b'"', b"")
+                                else:
+                                    # 去掉可能存在的引号并转换为字节串
+                                    FilterParam = str(FilterChoice[2]).strip().replace("'", "").replace('"', "").encode('utf-8')
+
+                            print("条件比较: 字段类型=", FieldType, "查询条件值=", FilterParam)
+
                         tmp_List = current_list[:]
                         current_list = []
                         for tmpRecord in tmp_List:
@@ -253,9 +302,19 @@ def execute_logical_tree():
                                 ans = tmpRecord[FieldIndex]
                             else:
                                 ans = tmpRecord[TableIndex][FieldIndex]
-                            if FieldType == 0 or FieldType == 1:
-                                ans = ans.strip()
-                            if FilterParam == ans:
+
+                            # 确保ans是正确的类型
+                            if FieldType == 0 or FieldType == 1:  # 字符串类型
+                                if isinstance(ans, bytes):
+                                    ans = ans.strip()
+                                else:
+                                    ans = str(ans).strip().encode('utf-8')
+
+                            print("比较: 记录值=", ans, "条件值=", FilterParam)
+
+                            # 执行比较
+                            if ans == FilterParam:
+                                print("找到匹配记录!")
                                 current_list.append(tmpRecord)
 
                     if 'Proj' in dict_[idx][0]:
@@ -283,21 +342,45 @@ def execute_logical_tree():
                                 current_list.append(tmp)
                         outPutField = []
                         for xi in SelIndexList:
-                            outPutField.append(
-                                tableName_Order[xi[0]].strip() + '.' + current_field[xi[0]][xi[1]][0].strip())
+                            # 确保连接的内容是相同类型，此处统一转为字节串
+                            tableName = tableName_Order[xi[0]]
+                            if isinstance(tableName, str):
+                                tableName = tableName.encode('utf-8')
+
+                            fieldName = current_field[xi[0]][xi[1]][0]
+                            if isinstance(fieldName, str):
+                                fieldName = fieldName.encode('utf-8')
+
+                            # 使用字节串连接
+                            outPutField.append(tableName.strip() + b'.' + fieldName.strip())
                         return outPutField, current_list, True
                 idx -= 1
 
         outPutField, current_list, isRight = execute_tree()
 
         if isRight:
-            print (outPutField)
-            for record in current_list:
-                print (record)
+            # 显示字段名
+            print("查询字段:", [field.decode('utf-8') if isinstance(field, bytes) else field for field in outPutField])
+
+            # 显示查询结果
+            print("\n查询结果:")
+            if current_list:
+                for record in current_list:
+                    # 处理不同类型的记录值
+                    formatted_record = []
+                    for val in record:
+                        if isinstance(val, bytes):
+                            formatted_record.append(val.decode('utf-8').strip())
+                        else:
+                            formatted_record.append(val)
+                    print(formatted_record)
+            else:
+                print("没有找到满足条件的记录")
         else:
-            print ('WRONG SQL INPUT!')
+            print('SQL查询输入错误!')
     else:
-        print ('there is no query plan tree for the execution')
+        print('没有可执行的查询计划树')
+
 
 # --------------------------------
 # Author: Shuting Guo shutingnjupt@gmail.com
@@ -306,23 +389,47 @@ def execute_logical_tree():
 #       global_logical_tree
 # ---------------------------------
 def construct_logical_tree():
-    if syn_tree:
-        sel_list,from_list,where_list=extract_sfw_data()
-        sel_list=[i for i in sel_list if i!=',']
-        from_list=[i for i in from_list if i!=',']
-        where_list=tuple(where_list)
-        #print sel_list,from_list,where_list
+    print('Constructing logical tree...')
+    if common_db.global_syn_tree:
+        print('Syntax tree exists, extracting SFW data...')
+        sel_list, from_list, where_list = extract_sfw_data()
+
+        comma = b','
+        sel_list = [i for i in sel_list if i != comma]
+        from_list = [i for i in from_list if i != comma]
+        where_list = tuple(where_list)
+
+        print('Selection list:', sel_list)
+        print('From list:', from_list)
+        print('Where list:', where_list)
+
+        if not sel_list or not from_list:
+            print('Warning: Selection list or From list is empty')
+            return
 
         from_node = construct_from_node(from_list)
+        if from_node:
+            print('From node constructed successfully')
+        else:
+            print('Failed to construct From node')
+            return
+
         where_node = construct_where_node(from_node, where_list)
+        if where_node:
+            print('Where node constructed successfully')
+        else:
+            print('Failed to construct Where node')
+            return
+
         common_db.global_logical_tree = construct_select_node(where_node, sel_list)
 
-        #if common_db.global_logical_tree:
-        #    common_db.show(common_db.global_logical_tree)
-
-
+        if common_db.global_logical_tree:
+            print('Logical tree constructed successfully')
+            common_db.show(common_db.global_logical_tree)
+        else:
+            print('Failed to construct logical tree')
     else:
-        print ('there is no data in the syntax tree in the construct_logical_tree')
+        print('there is no data in the syntax tree in the construct_logical_tree')
 
 
 '''
@@ -335,5 +442,3 @@ sel_list1=['f1','f2']
 syn_tree=construct_select_node(tree_where,sel_list1)
 print extract_sfw_data()
 '''
-
-

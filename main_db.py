@@ -140,19 +140,54 @@ def main():
         elif choice == '5':  # process SELECT FROM WHERE clause
             print('#        Your Query is to SQL QUERY                  #')
             sql_str = input('please enter the select from where clause:')
-            lex_db.set_lex_handle()  # to set the global_lexer in common_db.py
-            parser_db.set_handle()  # to set the global_parser in common_db.py
 
             try:
+                # 确保先重载模块，以避免全局变量引用问题
+                print("重新加载模块...")
+                importlib.reload(common_db)
+                importlib.reload(lex_db)
+                importlib.reload(parser_db)
+                importlib.reload(query_plan_db)
+
+                # 初始化词法分析器和语法分析器
+                print("初始化词法分析器...")
+                lex_db.set_lex_handle()  # to set the global_lexer in common_db.py
+                if common_db.global_lexer is None:
+                    raise Exception("词法分析器初始化失败")
+
+                print("初始化语法分析器...")
+                parser_db.set_handle()  # to set the global_parser in common_db.py
+                if common_db.global_parser is None:
+                    raise Exception("语法分析器初始化失败")
+
+                # 确保SQL字符串使用正确编码
+                sql_str = sql_str.strip()
+
+                # 解析SQL语句构建语法树
+                print('解析SQL语句:', sql_str)
                 common_db.global_syn_tree = common_db.global_parser.parse(
-                    sql_str.strip(),
-                    lexer = common_db.global_lexer
-                )  # construct the global_syn_tree
-                importlib.reload(query_plan_db)  # reload query_plan_db module to construct the query plan
-                query_plan_db.construct_logical_tree()
-                query_plan_db.execute_logical_tree()
-            except:
-                print('WRONG SQL INPUT!')
+                    sql_str,
+                    lexer=common_db.global_lexer
+                )
+
+                if common_db.global_syn_tree:
+                    print('语法树构建成功')
+                    # 构建逻辑树
+                    query_plan_db.construct_logical_tree()
+
+                    # 执行查询
+                    if common_db.global_logical_tree:
+                        print('执行逻辑树...')
+                        query_plan_db.execute_logical_tree()
+                    else:
+                        print('逻辑查询树生成失败')
+                else:
+                    print('SQL语句解析失败')
+
+            except Exception as e:
+                print('SQL输入错误: ', str(e))
+                import traceback
+                traceback.print_exc()
             print('#----------------------------------------------------#')
             choice = input(PROMPT_STR)
 

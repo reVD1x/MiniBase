@@ -494,3 +494,10 @@ class Storage(object):
             self.f_handle.write(self.buf)
             self.f_handle.flush()
             self.f_handle.close()
+
+    # ------------------------------
+    # 获取字段名称列表，用于查询执行
+    # 返回与 getFieldList 格式相同的字段信息
+    # ------------------------------
+    def getfilenamelist(self):
+        return self.getFieldList()

@@ -88,8 +88,9 @@ class Schema(object):
         tmp=[]
         for i in range(len(self.headObj.tableNames)):
             if self.headObj.tableNames[i][0] == table_name:
+                separate = b'|'
                 tmp = [j[0].strip() for j in self.headObj.tableFields[table_name.strip()]]
-                print ('|'.encode('utf-8').join(tmp))
+                print (separate.join(tmp))
                 return tmp
 
         # to be inserted here
