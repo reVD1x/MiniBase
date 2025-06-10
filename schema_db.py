@@ -89,7 +89,7 @@ class Schema(object):
         for i in range(len(self.headObj.tableNames)):
             if self.headObj.tableNames[i][0] == table_name:
                 tmp = [j[0].strip() for j in self.headObj.tableFields[table_name.strip()]]
-                print ('|'.join(tmp))
+                print ('|'.encode('utf-8').join(tmp))
                 return tmp
 
         # to be inserted here
@@ -133,9 +133,8 @@ class Schema(object):
         else:  # there is something in the schema file
 
             print("there is something in the all.sch")
-            # in the following ? denotes bool type and 'i' denotes an int type
-            isStored, tempTableNum, tempOffset = struct.unpack_from('!?ii', buf,
-                                                                    0)  # link:https://docs.python.org/2/library/struct.html
+            # in the following '?' denotes bool type and 'i' denotes an int type
+            isStored, tempTableNum, tempOffset = struct.unpack_from('!?ii', buf, 0)  # link:https://docs.python.org/2/library/struct.html
 
             print("tableNum in schema file is ", tempTableNum)
             print("isStored in schema file is ", isStored)
@@ -179,6 +178,7 @@ class Schema(object):
                             tempFieldName, tempFieldType, tempFieldLength = struct.unpack_from('!10sii',
                                                                                                buf,
                                                                                                tempPos + j * MAX_FIELD_LEN)
+
 
                             print('field name is ', tempFieldName.strip())
 

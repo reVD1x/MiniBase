@@ -58,7 +58,7 @@ def extract_sfw_data():
     if syn_tree is None:
         print ('wrong')
     else:
-        #common_db.show(syn_tree)
+        common_db.show(syn_tree)
         PN = parseNode()
         destruct(syn_tree,PN)
         return PN.get_sel_list(),PN.get_from_list(),PN.get_where_list()

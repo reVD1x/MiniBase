@@ -4,8 +4,8 @@
 # modified by:
 #--------------------------------------------
 # the module is responsible for
-#(1) defining tokens used for parsing SQL statements
-#(2) constructing a lex object
+# (1) defining tokens used for parsing SQL statements
+# (2) constructing a lex object
 #-------------------------------
 import ply.lex as lex
 import common_db
@@ -29,6 +29,7 @@ def t_AND(t):
     r'and'
     return t
 
+# table column name:
 def t_TCNAME(t):
     r'[A-Z_a-z]\w*'
     return t
@@ -82,7 +83,7 @@ def test():
         temp_tok=my_lexer.token()
         if temp_tok is None:
             break
-        print temp_tok
+        print(temp_tok)
 
 
 test()

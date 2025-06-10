@@ -36,7 +36,6 @@ def show(node_obj):
         if node_obj.var:
             print(node_obj.var)
         if node_obj.children:
-
             for i in range(len(node_obj.children)):
                 show(node_obj.children[i])
     if isinstance(node_obj, str):  # it is a string object

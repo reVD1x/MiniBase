@@ -5,7 +5,7 @@
 # -----------------------------------
 # This is the main loop of the program
 # ---------------------------------------
-
+import importlib
 import struct
 import sys
 import ctypes
@@ -52,9 +52,9 @@ def main():
                 # Create a new table
                 dataObj = storage_db.Storage(tableName)
 
-                insertFieldList = dataObj.getFieldList()    # get the field list from the data file
+                insertFieldList = dataObj.getFieldList()  # get the field list from the data file
 
-                schemaObj.appendTable(tableName, insertFieldList)   # add the table structure to schema file
+                schemaObj.appendTable(tableName, insertFieldList)  # add the table structure to schema file
             else:
                 dataObj = storage_db.Storage(tableName)
 
@@ -82,11 +82,10 @@ def main():
         elif choice == '2':  # delete a table from schema file and data file
 
             table_name = input('please input the name of the table to be deleted:')
-            if isinstance(table_name,str):
-                table_name=table_name.encode('utf-8')
+            if isinstance(table_name, str):
+                table_name = table_name.encode('utf-8')
             if schemaObj.find_table(table_name.strip()):
-                if schemaObj.delete_table_schema(
-                        table_name):  # delete the schema from the schema file
+                if schemaObj.delete_table_schema(table_name):  # delete the schema from the schema file
                     dataObj = storage_db.Storage(table_name)  # create an object for the data of table
                     dataObj.delete_table_data(table_name.strip())  # delete table content from the table file
                     del dataObj
@@ -98,7 +97,6 @@ def main():
             else:
                 print('there is no table '.encode('utf-8') + table_name + ' in the schema file'.encode('utf-8'))
 
-
             choice = input(PROMPT_STR)
 
 
@@ -107,17 +105,16 @@ def main():
 
             print(schemaObj.headObj.tableNames)
             table_name = input('please input the name of the table to be displayed:')
-            if isinstance(table_name,str):
-                table_name=table_name.encode('utf-8')
-            if table_name.strip():
-                if schemaObj.find_table(table_name.strip()):
-                    schemaObj.viewTableStructure(table_name)  # to be implemented
+            if isinstance(table_name, str):
+                table_name = table_name.encode('utf-8')
+            if schemaObj.find_table(table_name.strip()):
+                schemaObj.viewTableStructure(table_name)  # to be implemented
 
-                    dataObj = storage_db.Storage(table_name)  # create an object for the data of table
-                    dataObj.show_table_data()  # view all the data of the table
-                    del dataObj
-                else:
-                    print('table name is None')
+                dataObj = storage_db.Storage(table_name)  # create an object for the data of table
+                dataObj.show_table_data()  # view all the data of the table
+                del dataObj
+            else:
+                print('table name is None')
 
             choice = input(PROMPT_STR)
 
@@ -149,9 +146,9 @@ def main():
             try:
                 common_db.global_syn_tree = common_db.global_parser.parse(
                     sql_str.strip(),
-                    lexer=common_db.global_lexer
+                    lexer = common_db.global_lexer
                 )  # construct the global_syn_tree
-                #reload(query_plan_db)  # 重新加载 query_plan_db 模块，构建查询的逻辑执行计划
+                importlib.reload(query_plan_db)  # reload query_plan_db module to construct the query plan
                 query_plan_db.construct_logical_tree()
                 query_plan_db.execute_logical_tree()
             except:
@@ -166,14 +163,52 @@ def main():
             field_name = input('please input the field name and the corresponding keyword (fieldName:keyword):')
             # to the students: to be inserted here, delete the line from data files
 
+            if isinstance(table_name, str):
+                table_name = table_name.encode('utf-8')
+
+            if table_name.strip():
+                if not schemaObj.find_table(table_name.strip()):
+                    print('table name is None')
+                else:
+                    try:
+                        field_name, keyword = field_name.split(':', 1)
+                        field_name = field_name.strip()
+                        keyword = keyword.strip()
+                    except ValueError:
+                        print("wrong input format, please use 'fieldName:keyword'")
+                        choice = input(PROMPT_STR)
+                        continue
+
+                    dataObj = storage_db.Storage(table_name)  # create an object for the data of table
+                    field_list = dataObj.getFieldList()  # get the field list from the data file
+
+                    # for field in field_list:
+                    #   if field[0].strip() == field_name:
+
             choice = input(PROMPT_STR)
 
         elif choice == '7':  # update a line of data given the keyword
 
-            table_name = input('please input the name of the table:')
-            field_name = input('please input the field name:')
-            field_name_value = input('please input the old value of the field:')
-            # to the students: to be inserted here, update the line according to the user input
+            table_name = input('please input the name of the table:').strip()
+            keyword_field = input('please input the search field name:').strip()
+            keyword_value = input('please input the search value:').strip()
+            update_field = input('please input the field to update:').strip()
+            new_value = input('please input the new value:').strip()
+
+            if isinstance(table_name, str):
+                table_name = table_name.encode('utf-8')
+
+            try:
+                storage = storage_db.Storage(table_name)
+                if storage.update_row_by_keyword(keyword_field, keyword_value, update_field, new_value):
+                    print("Update successful!")
+                else:
+                    print("Update failed (no matching record or invalid fields)")
+            except Exception as e:
+                print(f"Error: {str(e)}")
+            finally:
+                if 'storage' in locals():
+                    del storage
 
             choice = input(PROMPT_STR)
 
@@ -189,6 +224,3 @@ def main():
 
 if __name__ == '__main__':
     main()
-
-
-
