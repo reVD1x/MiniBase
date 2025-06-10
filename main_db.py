@@ -51,14 +51,16 @@ def main():
             if tableName.strip() not in schemaObj.get_table_name_list():
                 # Create a new table
                 dataObj = storage_db.Storage(tableName)
-
                 insertFieldList = dataObj.getFieldList()  # get the field list from the data file
-
                 schemaObj.appendTable(tableName, insertFieldList)  # add the table structure to schema file
             else:
                 dataObj = storage_db.Storage(tableName)
 
-                # to the students: The following needs to be further implemented (many lines can be added)
+            try:
+                # 开始事务
+                dataObj.begin_transaction()
+
+                # 收集记录数据
                 record = []
                 Field_List = dataObj.getFieldList()
                 for x in Field_List:
@@ -67,11 +69,21 @@ def main():
                     record.append(input(s))
 
                 if dataObj.insert_record(record):  # add a row
+                    # 提交事务
+                    dataObj.commit_transaction()
                     print('OK!')
                 else:
+                    # 回滚事务
+                    dataObj.rollback_transaction()
                     print('Wrong input!')
 
-                del dataObj
+            except Exception as e:
+                if dataObj:
+                    dataObj.rollback_transaction()
+                print(f'Error: {str(e)}')
+            finally:
+                if dataObj:
+                    del dataObj
 
             choice = input(PROMPT_STR)
 
@@ -170,6 +182,7 @@ def main():
                     lexer=common_db.global_lexer
                 )
 
+                # 执行SQL语句
                 if common_db.global_syn_tree:
                     print('语法树构建成功')
                     # 构建逻辑树
@@ -223,7 +236,6 @@ def main():
             choice = input(PROMPT_STR)
 
         elif choice == '7':  # update a line of data given the keyword
-
             table_name = input('please input the name of the table:').strip()
             keyword_field = input('please input the search field name:').strip()
             keyword_value = input('please input the search value:').strip()
@@ -235,11 +247,20 @@ def main():
 
             try:
                 storage = storage_db.Storage(table_name)
+                # 开始事务
+                storage.begin_transaction()
+
                 if storage.update_row_by_keyword(keyword_field, keyword_value, update_field, new_value):
+                    # 更新成功，提交事务
+                    storage.commit_transaction()
                     print("Update successful!")
                 else:
+                    # 更新失败，回滚事务
+                    storage.rollback_transaction()
                     print("Update failed (no matching record or invalid fields)")
             except Exception as e:
+                if 'storage' in locals():
+                    storage.rollback_transaction()
                 print(f"Error: {str(e)}")
             finally:
                 if 'storage' in locals():
