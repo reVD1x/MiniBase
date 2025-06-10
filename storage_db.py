@@ -59,6 +59,9 @@ from common_db import BLOCK_SIZE
 import struct
 import os
 import ctypes
+from transaction_db import TransactionManager
+import pickle
+import time
 
 
 # --------------------------------------------
@@ -80,6 +83,8 @@ class Storage(object):
 
         self.record_list = []
         self.record_Position = []
+        self.transaction_manager = TransactionManager()
+        self.current_transaction = None
 
         if not os.path.exists(tableName + '.dat'.encode('utf-8')):  # the file corresponding to the table does not exist
             print('table file '.encode('utf-8') + tableName + '.dat does not exists'.encode('utf-8'))
@@ -212,6 +217,10 @@ class Storage(object):
     # return: True or False
     # -------------------------------
     def insert_record(self, insert_record):
+        # 检查是否在事务中
+        if not self.current_transaction:
+            print("Error: No active transaction. Please begin a transaction first.")
+            return False
 
         # example: ['xuyidan','23','123456']
 
@@ -235,6 +244,9 @@ class Storage(object):
                 except:
                     return False
             insert_record[idx] = ' ' * (self.field_name_list[idx][2] - len(insert_record[idx])) + insert_record[idx]
+
+        # 先写日志（先记规则）
+        self._write_log("insert", tuple(tmpRecord))
 
         # step2: Add tmpRecord to record_list; change insert_record into inputStr
         inputStr = ''.join(insert_record)
@@ -353,6 +365,11 @@ class Storage(object):
     # -----------------------------------
 
     def update_row_by_keyword(self, keyword_field, keyword_value, update_field, new_value):
+        # 检查是否在事务中
+        if not self.current_transaction:
+            print("Error: No active transaction. Please begin a transaction first.")
+            return False
+
         # 1. 规范化字段名（从字节解码为字符串）
         field_names = [f[0].decode('utf-8').strip() for f in self.field_name_list]
 
@@ -388,6 +405,9 @@ class Storage(object):
 
             # 使用字符串进行比较
             if keyword_str == str(keyword_value).strip():
+                # 先写日志（根据先记后写规则）
+                self._write_log("update", (record, new_value))
+
                 # 准备新值（根据字段类型处理）
                 if field_type == 1:  # varStr 类型（可变长度字符串）
                     new_bytes = str(new_value).encode('utf-8')
@@ -479,7 +499,7 @@ class Storage(object):
                          len(record_content),
                          '2023-01-01'.encode('utf-8'))
         struct.pack_into(f'!{len(record_content)}s', buf, head_len, record_content)
-        self.f_handle.write(buf.raw)  # 使用 buf.raw 写入完整缓冲区
+        self.f_handle.write(buf.raw)  # 使用 buf.raw 写入���整缓冲区
         self.f_handle.flush()
 
     # ----------------------------------------
@@ -501,3 +521,63 @@ class Storage(object):
     # ------------------------------
     def getfilenamelist(self):
         return self.getFieldList()
+
+    # --------------------------------
+    # 开始一个新事务
+    # --------------------------------
+    def begin_transaction(self):
+        self.current_transaction = self.transaction_manager.begin_transaction()
+        return self.current_transaction
+
+    # --------------------------------
+    # 提交当前事务
+    # --------------------------------
+    def commit_transaction(self):
+        if self.current_transaction:
+            self.transaction_manager.commit_transaction(self.current_transaction)
+            self.current_transaction = None
+            return True
+        return False
+
+    # --------------------------------
+    # 回滚当前事务
+    # --------------------------------
+    def rollback_transaction(self):
+        if self.current_transaction:
+            self.transaction_manager.rollback_transaction(self.current_transaction)
+            self.current_transaction = None
+            return True
+        return False
+
+    # --------------------------------
+    # 写入日志
+    # operation_type: 操作类型（"insert" 或 "update"）
+    # record_data: 记录数据（元组形式���
+    # --------------------------------
+    def _write_log(self, operation_type, record_data):
+        """写入日志"""
+        if not self.current_transaction:
+            return False
+
+        if operation_type == "insert":
+            # 对于插入操作，只需要记录后像
+            self.transaction_manager.write_after_image(
+                self.current_transaction,
+                os.path.basename(self.f_handle.name),
+                record_data,
+                'INSERT'  # 明确指定为插入操作
+            )
+        elif operation_type == "update":
+            # 对于更新操作，需要记录前像和后像
+            self.transaction_manager.write_before_image(
+                self.current_transaction,
+                os.path.basename(self.f_handle.name),
+                record_data[0]  # 原始数据
+            )
+            self.transaction_manager.write_after_image(
+                self.current_transaction,
+                os.path.basename(self.f_handle.name),
+                record_data[1],  # 新数据
+                'UPDATE'  # 明确指定为更新操作
+            )
+        return True
