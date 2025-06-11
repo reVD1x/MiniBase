@@ -400,16 +400,102 @@ class Storage(object):
             print(f"No records found with {field_name}={keyword}")
             return False
         
-        # 6. 删除记录（从后向前删除，避免索引变化问题）
-        for idx in sorted(records_to_delete, reverse=True):
-            del self.record_list[idx]
-            del self.record_Position[idx]
+        # 6. 开始事务
+        self.begin_transaction()
         
-        # 7. 更新文件
-        # 重新写入整个文件比较复杂，这里简化处理
-        # 实际应用中应该更新文件中的记录标记或重组文件
-        print(f"Deleted {len(records_to_delete)} record(s) with {field_name}={keyword}")
-        return True
+        try:
+            # 7. 删除记录（从后向前删除，避免索引变化问题）
+            for idx in sorted(records_to_delete, reverse=True):
+                # 在删除前记录原始记录（用于事务回滚）
+                original_record = self.record_list[idx]
+                original_position = self.record_Position[idx]
+                
+                # 删除内存中的记录
+                del self.record_list[idx]
+                del self.record_Position[idx]
+                
+                # 这里应该调用一个方法来更新磁盘上的记录
+                # 但由于我们没有看到直接的方法，我们可以修改文件结构
+            
+            # 8. 更新数据块信息
+            # 更新数据块数量
+            if len(self.record_list) == 0:
+                self.data_block_num = 0
+            else:
+                self.data_block_num = 1  # 简化：所有记录放在一个数据块中
+            
+            # 更新文件头部
+            self.f_handle.seek(0)
+            buf = ctypes.create_string_buffer(struct.calcsize('!iii'))
+            struct.pack_into('!iii', buf, 0, 0, self.data_block_num, self.num_of_fields)
+            self.f_handle.write(buf)
+            self.f_handle.flush()
+            
+            # 如果没有记录了，就截断文件
+            if len(self.record_list) == 0:
+                self.f_handle.truncate(BLOCK_SIZE)
+            else:
+                # 重写数据块
+                # 更新数据块头部
+                self.f_handle.seek(BLOCK_SIZE)
+                buf = ctypes.create_string_buffer(struct.calcsize('!ii'))
+                struct.pack_into('!ii', buf, 0, 1, len(self.record_list))  # block_id=1, record_count
+                self.f_handle.write(buf)
+                
+                # 计算记录大小
+                record_head_len = struct.calcsize('!ii10s')
+                record_content_len = sum(map(lambda x: x[2], self.field_name_list))
+                record_len = record_head_len + record_content_len
+                
+                # 写入记录偏移量和数据
+                for i in range(len(self.record_list)):
+                    # 写入偏移量
+                    offset = struct.calcsize('!ii') + i * struct.calcsize('!i')
+                    self.f_handle.seek(BLOCK_SIZE + offset)
+                    buf = ctypes.create_string_buffer(struct.calcsize('!i'))
+                    data_offset = BLOCK_SIZE - (i + 1) * record_len
+                    struct.pack_into('!i', buf, 0, data_offset)
+                    self.f_handle.write(buf)
+                    
+                    # 写入记录数据
+                    self.f_handle.seek(BLOCK_SIZE + data_offset)
+                    buf = ctypes.create_string_buffer(record_len)
+                    
+                    # 写入记录头
+                    record_schema_address = struct.calcsize('!iii')
+                    update_time = '2023-11-16'  # 当前日期
+                    struct.pack_into('!ii10s', buf, 0, record_schema_address, record_content_len, update_time.encode('utf-8'))
+                    
+                    # 准备记录内容
+                    record_data = ''
+                    for j, field_value in enumerate(self.record_list[i]):
+                        if isinstance(field_value, bytes):
+                            field_value = field_value.decode('utf-8')
+                        field_value = str(field_value)
+                        field_length = self.field_name_list[j][2]
+                        
+                        # 确保字段值长度符合要求
+                        if len(field_value) < field_length:
+                            field_value = ' ' * (field_length - len(field_value)) + field_value
+                        elif len(field_value) > field_length:
+                            field_value = field_value[:field_length]
+                        
+                        record_data += field_value
+                    
+                    # 写入记录内容
+                    struct.pack_into('!' + str(record_content_len) + 's', buf, record_head_len, record_data.encode('utf-8'))
+                    self.f_handle.write(buf.raw)
+            
+            # 提交事务
+            self.commit_transaction()
+            print(f"Deleted {len(records_to_delete)} record(s) with {field_name}={keyword}")
+            return True
+            
+        except Exception as e:
+            # 回滚事务
+            self.rollback_transaction()
+            print(f"Error during deletion: {str(e)}")
+            return False
 
     # --------------------------------
     # update one record by keyword, support byte storage and string comparison
@@ -557,7 +643,7 @@ class Storage(object):
                          len(record_content),
                          '2023-01-01'.encode('utf-8'))
         struct.pack_into(f'!{len(record_content)}s', buf, head_len, record_content)
-        self.f_handle.write(buf.raw)  # 使用 buf.raw 写入���整缓冲区
+        self.f_handle.write(buf.raw)  # 使用 buf.raw 写入整个缓冲区
         self.f_handle.flush()
 
     # ----------------------------------------
@@ -610,7 +696,7 @@ class Storage(object):
     # --------------------------------
     # 写入日志
     # operation_type: 操作类型（"insert" 或 "update"）
-    # record_data: 记录数据（元组形式���
+    # record_data: 记录数据（元组形式）
     # --------------------------------
     def _write_log(self, operation_type, record_data):
         """写入日志"""
