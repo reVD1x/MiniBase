@@ -13,6 +13,7 @@ import common_db
 import storage_db
 import itertools
 
+
 # --------------------------------
 # 不直接导入global_syn_tree，而是在需要时通过common_db.global_syn_tree引用
 # -------------------------------------------
@@ -72,6 +73,7 @@ def extract_sfw_data():
 # FromList:TCNAME COMMA FromList
 # FromList:TCNAME
 # Condition: TCNAME EQX CONSTANT
+# B22042228
 # ---------------------------------
 
 def destruct(nodeObj, PN):
@@ -103,6 +105,7 @@ def destruct(nodeObj, PN):
                     destruct(nodeObj.children[i], PN)
 
 
+# B22042228
 def show(nodeObj, tmpList):
     if isinstance(nodeObj, common_db.Node):
         if not nodeObj.children:
@@ -176,6 +179,7 @@ def construct_select_node(wf_node, sel_list):
 # to execute the query plan and return the result
 # input
 #       global logical tree
+# B22042228
 # ---------------------------------------------
 
 def execute_logical_tree():
@@ -252,7 +256,7 @@ def execute_logical_tree():
                         a_2 = storage_db.Storage(dict_[idx][1])
                         current_list = []
                         tableName_Order = [dict_[idx][0], dict_[idx][1]]
-                        current_field = [a_1.getfilenamelist(), a_2.getfilenamelist()]
+                        current_field = [a_1.getFileNameList(), a_2.getFileNameList()]
                         for x in itertools.product(a_1.getRecord(), a_2.getRecord()):
                             current_list.append(list(x))
                     else:
@@ -260,13 +264,13 @@ def execute_logical_tree():
                         current_list = a_1.getRecord()
 
                         tableName_Order = [dict_[idx][0]]
-                        current_field = [a_1.getfilenamelist()]
+                        current_field = [a_1.getFileNameList()]
                         # print current_list
 
                 elif 'X' in dict_[idx] and len(dict_[idx]) > 1:
                     a_2 = storage_db.Storage(dict_[idx][1])
                     tableName_Order.append(dict_[idx][1])
-                    current_field.append(a_2.getfilenamelist())
+                    current_field.append(a_2.getFileNameList())
                     tmp_List = current_list[:]
                     current_list = []
                     for x in itertools.product(tmp_List, a_2.getRecord()):
@@ -291,7 +295,8 @@ def execute_logical_tree():
                                     FilterParam = FilterChoice[2].strip().replace(b"'", b"").replace(b'"', b"")
                                 else:
                                     # 去掉可能存在的引号并转换为字节串
-                                    FilterParam = str(FilterChoice[2]).strip().replace("'", "").replace('"', "").encode('utf-8')
+                                    FilterParam = str(FilterChoice[2]).strip().replace("'", "").replace('"', "").encode(
+                                        'utf-8')
 
                             print("条件比较: 字段类型=", FieldType, "查询条件值=", FilterParam)
 
@@ -387,6 +392,7 @@ def execute_logical_tree():
 # to construct a logical query plan tree
 # output:
 #       global_logical_tree
+# B22042228
 # ---------------------------------
 def construct_logical_tree():
     print('Constructing logical tree...')
@@ -438,7 +444,7 @@ def construct_logical_tree():
 
                     # 创建Storage对象获取表的所有字段
                     storage_obj = storage_db.Storage(table_name_bytes)
-                    field_list = storage_obj.getfilenamelist()
+                    field_list = storage_obj.getFileNameList()
 
                     # 为每个字段生成完整的字段引用（表名.字段名）
                     for field in field_list:

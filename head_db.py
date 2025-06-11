@@ -5,7 +5,6 @@
 # the main memory structure of table schema
 # 
 # ------------------------------------
-import struct
 
 
 class Header(object):

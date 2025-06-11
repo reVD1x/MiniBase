@@ -60,8 +60,6 @@ import struct
 import os
 import ctypes
 from transaction_db import TransactionManager
-import pickle
-import time
 
 
 # --------------------------------------------
@@ -79,7 +77,7 @@ class Storage(object):
     def __init__(self, tableName):
         # print "__init__ of ",Storage.__name__,"begins to execute"
         self.open = False
-        tableName=tableName.strip()
+        tableName = tableName.strip()
 
         self.record_list = []
         self.record_Position = []
@@ -215,6 +213,7 @@ class Storage(object):
     # to insert a record into table
     # param insert_record: list
     # return: True or False
+    # B22042225
     # -------------------------------
     def insert_record(self, insert_record):
         # 检查是否在事务中
@@ -360,20 +359,21 @@ class Storage(object):
     #       keyword: the value to match
     # output:
     #       True or False
+    # B22042219 B22042225(事务)
     # -----------------------------------
     def delete_record_by_field(self, field_name, keyword):
         # 1. 规范化字段名（从字节解码为字符串）
         field_names = [f[0].decode('utf-8').strip() for f in self.field_name_list]
-        
+
         # 2. 检查字段是否存在
         if field_name not in field_names:
             print(f"Error: Valid fields are {field_names}")
             return False
-        
+
         # 3. 获取字段索引和类型
         field_idx = field_names.index(field_name)
         field_type = self.field_name_list[field_idx][1]
-        
+
         # 4. 类型转换处理
         try:
             if field_type == 2:  # int
@@ -383,7 +383,7 @@ class Storage(object):
         except ValueError:
             print(f"Type error: Cannot convert '{keyword}' to field type {field_type}")
             return False
-        
+
         # 5. 查找要删除的记录
         records_to_delete = []
         for i, record in enumerate(self.record_list):
@@ -391,18 +391,18 @@ class Storage(object):
             field_value = record[field_idx]
             if isinstance(field_value, bytes):
                 field_value = field_value.decode('utf-8').strip()
-            
+
             # 比较值并标记要删除的记录
             if str(field_value) == str(keyword):
                 records_to_delete.append(i)
-        
+
         if not records_to_delete:
             print(f"No records found with {field_name}={keyword}")
             return False
-        
+
         # 6. 开始事务
         self.begin_transaction()
-        
+
         try:
             # 7. 删除记录（从后向前删除，避免索引变化问题）
             for idx in sorted(records_to_delete, reverse=True):
@@ -422,14 +422,14 @@ class Storage(object):
                 self.data_block_num = 0
             else:
                 self.data_block_num = 1  # 简化：所有记录放在一个数据块中
-            
+
             # 更新文件头部
             self.f_handle.seek(0)
             buf = ctypes.create_string_buffer(struct.calcsize('!iii'))
             struct.pack_into('!iii', buf, 0, 0, self.data_block_num, self.num_of_fields)
             self.f_handle.write(buf)
             self.f_handle.flush()
-            
+
             # 如果没有记录了，就截断文件
             if len(self.record_list) == 0:
                 self.f_handle.truncate(BLOCK_SIZE)
@@ -439,7 +439,7 @@ class Storage(object):
                 buf = ctypes.create_string_buffer(struct.calcsize('!ii'))
                 struct.pack_into('!ii', buf, 0, 1, len(self.record_list))
                 self.f_handle.write(buf)
-                
+
                 # 重写所有记录
                 self._rewrite_all_records()
 
@@ -447,7 +447,7 @@ class Storage(object):
             self.commit_transaction()
             print(f"Deleted {len(records_to_delete)} record(s) with {field_name}={keyword}")
             return True
-            
+
         except Exception as e:
             # 回滚事务
             self.rollback_transaction()
@@ -463,6 +463,7 @@ class Storage(object):
     #       new_value: the new value to be set
     # output:
     #       True or False
+    # B22042204 B22042225(事务)
     # -----------------------------------
 
     def update_row_by_keyword(self, keyword_field, keyword_value, update_field, new_value):
@@ -542,6 +543,7 @@ class Storage(object):
     # deal with the update of record on disk
     # input:
     #       record_index: the index of the record in self.record_list
+    # B22042204
     # ------------------------------------
 
     def _update_record_on_disk(self, record_index):
@@ -619,12 +621,14 @@ class Storage(object):
     # ------------------------------
     # 获取字段名称列表，用于查询执行
     # 返回与 getFieldList 格式相同的字段信息
+    # B22042228
     # ------------------------------
-    def getfilenamelist(self):
+    def getFileNameList(self):
         return self.getFieldList()
 
     # --------------------------------
     # 开始一个新事务
+    # B22042225
     # --------------------------------
     def begin_transaction(self):
         """开始一个新的事务"""
@@ -633,6 +637,7 @@ class Storage(object):
 
     # --------------------------------
     # 提交当前事务
+    # B22042225
     # --------------------------------
     def commit_transaction(self):
         """提交当前事务"""
@@ -642,6 +647,7 @@ class Storage(object):
 
     # --------------------------------
     # 回滚当前事务
+    # B22042225
     # --------------------------------
     def rollback_transaction(self):
         """回滚当前事务"""
@@ -653,6 +659,7 @@ class Storage(object):
     # 写入日志
     # operation_type: 操作类型（"insert" 或 "update"）
     # record_data: 记录数据（元组形式）
+    # B22042225
     # --------------------------------
     def _write_log(self, operation_type, record_data):
         """写入日志"""
@@ -697,6 +704,7 @@ class Storage(object):
             )
         return True
 
+    # B22042219
     def delete_row_by_keyword(self, field_name, keyword):
         """根据关键字删除记录"""
         if not self.current_transaction:

@@ -6,16 +6,10 @@
 # This is the main loop of the program
 # ---------------------------------------
 import importlib
-import struct
-import sys
-import ctypes
-import os
 
-import head_db  # the main memory structure of table schema
 import schema_db  # the module to process table schema
 import storage_db  # the module to process the storage of instance
 
-import query_plan_db  # for SQL clause of which data is stored in binary format
 import lex_db  # for lex, where data is stored in binary format
 import parser_db  # for yacc, where ddata is stored in binary format
 import common_db  # the global variables, functions, constants in the program
@@ -42,6 +36,7 @@ def main():
 
     while True:
 
+        # B22042228
         if choice == '1':  # add a new table and lines of data
             tableName = input('please enter your new table name:')
             if isinstance(tableName, str):
@@ -52,10 +47,11 @@ def main():
                 # Create a new table
                 dataObj = storage_db.Storage(tableName)
                 insertFieldList = dataObj.getFieldList()  # get the field list from the data file
-                schemaObj.appendTable(tableName, insertFieldList)  # add the table structure to schema file
+                schemaObj.appendTable(tableName, insertFieldList)  # add the table structure to the schema file
             else:
                 dataObj = storage_db.Storage(tableName)
 
+                # B22042225
                 try:
                     # 开始事务
                     dataObj.begin_transaction()
@@ -89,8 +85,7 @@ def main():
 
 
 
-
-
+        # B22042228
         elif choice == '2':  # delete a table from schema file and data file
 
             table_name = input('please input the name of the table to be deleted:')
@@ -113,6 +108,7 @@ def main():
 
 
 
+        # B22042228
         elif choice == '3':  # view the table structure and all the data
 
             print(schemaObj.headObj.tableNames)
@@ -132,6 +128,7 @@ def main():
 
 
 
+        # B22042228
         elif choice == '4':  # delete all the table structures and their data
             table_name_list = list(schemaObj.get_table_name_list())
             # to be inserted here -> to delete from data files
@@ -149,6 +146,8 @@ def main():
             choice = input(PROMPT_STR)
 
 
+
+        # B22042228
         elif choice == '5':  # process SELECT FROM WHERE clause
             print('#        Your Query is to SQL QUERY                  #')
             sql_str = input('please enter the select from where clause:')
@@ -205,19 +204,21 @@ def main():
             choice = input(PROMPT_STR)
 
 
+
+        # B22042219
         elif choice == '6':  # delete a line of data from the storage file given the keyword
 
             table_name = input('please input the name of the table to be deleted from:')
             if isinstance(table_name, str):
                 table_name = table_name.encode('utf-8')
-            
+
             if schemaObj.find_table(table_name.strip()):
-                field_keyword = input('please input the field name and the corresponding keyword (fieldname:keyword):')
+                field_keyword = input('please input the field name and the corresponding keyword (fieldName:keyword):')
                 try:
                     field_name, keyword = field_keyword.split(':')
                     field_name = field_name.strip()
                     keyword = keyword.strip()
-                    
+
                     dataObj = storage_db.Storage(table_name)
                     if dataObj.delete_record_by_field(field_name, keyword):
                         print('Record(s) deleted successfully!')
@@ -225,12 +226,15 @@ def main():
                         print('Failed to delete record(s)!')
                     del dataObj
                 except ValueError:
-                    print('Invalid format! Please use fieldname:keyword format')
+                    print('Invalid format! Please use fieldName:keyword format')
             else:
                 print('Table not found in schema!')
 
             choice = input(PROMPT_STR)
 
+
+
+        # B22042204
         elif choice == '7':  # update a line of data given the keyword
             table_name = input('please input the name of the table:').strip()
             keyword_field = input('please input the search field name:').strip()
@@ -241,6 +245,7 @@ def main():
             if isinstance(table_name, str):
                 table_name = table_name.encode('utf-8')
 
+            # B22042225
             try:
                 storage = storage_db.Storage(table_name)
                 # 开始事务
@@ -254,10 +259,12 @@ def main():
                     # 更新失败，回滚事务
                     storage.rollback_transaction()
                     print("Update failed (no matching record or invalid fields)")
+
             except Exception as e:
                 if 'storage' in locals():
                     storage.rollback_transaction()
                 print(f"Error: {str(e)}")
+
             finally:
                 if 'storage' in locals():
                     del storage

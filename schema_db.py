@@ -81,11 +81,12 @@ class Schema(object):
     # to show the schema of given table
     # input
     #       table_name
+    # B22042228
     # ------------------------------
     def viewTableStructure(self, table_name):
         print('the structure of table '.encode('utf-8') + table_name + ' is as follows:'.encode('utf-8'))
 
-        tmp=[]
+        tmp = []
         for i in range(len(self.headObj.tableNames)):
             if self.headObj.tableNames[i][0] == table_name:
                 separate = b'|'
@@ -96,7 +97,7 @@ class Schema(object):
                         field_name_bytes = j[0]
                     field_name_bytes = field_name_bytes.strip()
                     tmp.append(field_name_bytes)
-                print (separate.join(tmp))
+                print(separate.join(tmp))
                 return tmp
 
         # to be inserted here
@@ -141,7 +142,8 @@ class Schema(object):
 
             print("there is something in the all.sch")
             # in the following '?' denotes bool type and 'i' denotes an int type
-            isStored, tempTableNum, tempOffset = struct.unpack_from('!?ii', buf, 0)  # link:https://docs.python.org/2/library/struct.html
+            isStored, tempTableNum, tempOffset = struct.unpack_from('!?ii', buf,
+                                                                    0)  # link:https://docs.python.org/2/library/struct.html
 
             print("tableNum in schema file is ", tempTableNum)
             print("isStored in schema file is ", isStored)
@@ -149,7 +151,7 @@ class Schema(object):
 
             Schema.body_begin_index = tempOffset
             nameList = []
-            fieldsList = {} # it is a dictionary
+            fieldsList = {}  # it is a dictionary
 
             if not isStored:  # only the meta head exists, but there is no table information in the schema file
                 self.headObj = head_db.Header(nameList, fieldsList, False, 0, BODY_BEGIN_INDEX)
@@ -185,7 +187,6 @@ class Schema(object):
                             tempFieldName, tempFieldType, tempFieldLength = struct.unpack_from('!10sii',
                                                                                                buf,
                                                                                                tempPos + j * MAX_FIELD_LEN)
-
 
                             print('field name is ', tempFieldName.strip())
 
@@ -237,6 +238,7 @@ class Schema(object):
     # input:
     #       tableName: the table to be added
     #       fieldList: the field information list and each element is a tuple(fieldName, fieldType, fieldLength)
+    # B22042228
     # -------------------------------
     def appendTable(self, tableName, fieldList):  # it modifies the tableNameHead and body of all.sch
         print("appendTable begins to execute")
@@ -257,7 +259,7 @@ class Schema(object):
                 if isinstance(fieldName, str):
                     fieldName = fieldName.encode('utf-8')
 
-                # 正确处理字段名填充 - 先去掉空格，然后用前导空格填充到10字节
+                # 正确处理字段名填充 - 先去掉空格，然后用前导空格填充到 10 字节
                 fieldName = fieldName.strip()
                 if len(fieldName) < 10:
                     filledFieldName = (' ' * (10 - len(fieldName))).encode('utf-8') + fieldName

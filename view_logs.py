@@ -2,10 +2,15 @@ import pickle
 import os
 from datetime import datetime
 
+
+# -------------------------
+# 日志查看器
+# B22042225
+# -------------------------
 def print_log_content(file_path):
     """打印日志文件的内容"""
     if os.path.exists(file_path):
-        print(f"\n{'-'*20} {file_path} 内容 {'-'*20}")
+        print(f"\n{'-' * 20} {file_path} 内容 {'-' * 20}")
         try:
             with open(file_path, 'rb') as f:
                 while True:
@@ -28,6 +33,7 @@ def print_log_content(file_path):
     else:
         print(f"\n文件 {file_path} 不存在")
 
+
 def main():
     """主函数，查看所有日志文件的内容"""
     print("欢迎使用日志查看器！")
@@ -43,6 +49,7 @@ def main():
 
     for log_file in log_files:
         print_log_content(log_file)
+
 
 if __name__ == '__main__':
     main()

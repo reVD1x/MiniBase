@@ -1,8 +1,8 @@
-#------------------------------------------------
+# ------------------------------------------------
 # mega_storage.py
 # author: Jingyu Han, hjymail@163.com
 # modified by:Shuting Guo, shutingnjupt@gmail.com
-#------------------------------------------------
+# ------------------------------------------------
 
 """
 mega_storage.py is to store table data in separate files.
@@ -15,141 +15,139 @@ Each line corresponds to one record and different field values are separated by 
 
 import os
 
-#--------------------------------------------
+
+# --------------------------------------------
 # the class can store table data into files
 # functions include insert, delete and update
-#--------------------------------------------
+# --------------------------------------------
 
 class MegaStorage(object):
 
-	# ------------------------------
-	# constructor of the class
-	# input:
-	#       tableName
-	# -------------------------------------
-	def __init__(self, tableName):  # each table corresponds to one file with suffix .dat
-		print ("__init__ of ", MegaStorage.__name__)
-		tableName.strip()
-		self.record_list = []  # a main memory list to store all the records
+    # ------------------------------
+    # constructor of the class
+    # input:
+    #       tableName
+    # -------------------------------------
+    def __init__(self, tableName):  # each table corresponds to one file with suffix .dat
+        print("__init__ of ", MegaStorage.__name__)
+        tableName.strip()
+        self.record_list = []  # a main memory list to store all the records
 
-		if not os.path.exists(tableName + '.txt'):  # the data file does not exist
-			print ('table file ' + tableName + '.txt does not exists')
-			self.f_handle = open(tableName + '.txt', 'w+')
-			print (tableName + '.txt has been created')
-			self.num_of_fields = None
+        if not os.path.exists(tableName + '.txt'):  # the data file does not exist
+            print('table file ' + tableName + '.txt does not exists')
+            self.f_handle = open(tableName + '.txt', 'w+')
+            print(tableName + '.txt has been created')
+            self.num_of_fields = None
 
-		else:  # the file does exist
+        else:  # the file does exist
 
-			self.f_handle = open(tableName + '.txt', 'r+')  ##a
-			print ('table file ' + tableName + '.txt is opened now')
+            self.f_handle = open(tableName + '.txt', 'r+')  ##a
+            print('table file ' + tableName + '.txt is opened now')
 
-			# show the data in the table( file)
-			for each_line in self.f_handle:
-				self.record_list.append(each_line.strip())
-				# print each_line.strip()
+            # show the data in the table( file)
+            for each_line in self.f_handle:
+                self.record_list.append(each_line.strip())
+            # print each_line.strip()
 
+    # ----------------------
+    # destruct of class
+    # ------------------------
+    def __del__(self):
+        print("__del__ of ", MegaStorage.__name__)
+        if self.f_handle:
+            self.f_handle.close()
 
-	# ----------------------
-	# destruct of class
-	# ------------------------
-	def __del__(self):
-		print ("__del__ of ", MegaStorage.__name__)
-		if self.f_handle:
-			self.f_handle.close()
+    # --------------------------------
+    # to insert only one record into table, the values are input by users
+    # input
+    #   field_name_list: the names of all fields
+    # -------------------------------
+    def insert_record(self, field_name_list):
 
-	# --------------------------------
-	# to insert only one record into table, the values are input by users
-	# input
-	#   field_name_list: the names of all fields
-	# -------------------------------
-	def insert_record(self, field_name_list):
+        if len(field_name_list) > 0:  # schema is provided
 
-		if len(field_name_list) > 0:  # schema is provided
+            record_str = ''
+            for i in range(len(field_name_list)):
+                temp_value = input('pleas insert the field value of ' + field_name_list[i] + ' :')
+                record_str = record_str + temp_value.strip() + '|'
 
-			record_str = ''
-			for i in range(len(field_name_list)):
-				temp_value = input('pleas insert the field value of ' + field_name_list[i] + ' :')
-				record_str = record_str + temp_value.strip() + '|'
+            temp_len = len(record_str)
+            last_str = record_str[0:temp_len - 1]
 
-			temp_len = len(record_str)
-			last_str = record_str[0:temp_len - 1]
-
-			print ('value is', last_str)
-			self.record_list.append(last_str)
-			self.f_handle.write(last_str + '\n')
-			self.f_handle.flush()
-
-
-		else:  # there is no schema given
-			print ('wrong in insert_record for the schema is not given')
-
-	# --------------------------------
-	# to view all records in the table
-	# input
-	# -------------------------------
-	def view_all(self):
-		if len(self.record_list) > 0:
+            print('value is', last_str)
+            self.record_list.append(last_str)
+            self.f_handle.write(last_str + '\n')
+            self.f_handle.flush()
 
 
-			for i in range(len(self.record_list)):
-				print (self.record_list[i])
+        else:  # there is no schema given
+            print('wrong in insert_record for the schema is not given')
 
-	# --------------------------------
-	# to delete one record from the table
-	# input
-	#       value_list: the list of field values of which each element is a tuple (field_name, new_field_value)
-	# Author: Shuting Guo
-	# -------------------------------
-	def del_one_record(self, value_list,field_name_list):
-		updateIndex = field_name_list.index(value_list[0])
-		tmp_List=[]
-		for record in self.record_list:
-			if record.split('|')[updateIndex] != value_list[1]:
-				tmp_List.append(record)
-		self.record_list=tmp_List[:]
+    # --------------------------------
+    # to view all records in the table
+    # input
+    # -------------------------------
+    def view_all(self):
+        if len(self.record_list) > 0:
 
-		self.f_handle.seek(0)        #back to the head of file,offset=0
-		self.f_handle.truncate(0)    #cut all data after offset=0
-		# print self.f_handle.tell()
-		self.f_handle.write('\n'.join(self.record_list))  #write record_list
-		self.f_handle.write('\n')
-		self.f_handle.flush()
+            for i in range(len(self.record_list)):
+                print(self.record_list[i])
 
+    # --------------------------------
+    # to delete one record from the table
+    # input
+    #       value_list: the list of field values of which each element is a tuple (field_name, new_field_value)
+    # Author: Shuting Guo
+    # -------------------------------
+    def del_one_record(self, value_list, field_name_list):
+        updateIndex = field_name_list.index(value_list[0])
+        tmp_List = []
+        for record in self.record_list:
+            if record.split('|')[updateIndex] != value_list[1]:
+                tmp_List.append(record)
+        self.record_list = tmp_List[:]
 
-	# -------------------------------
-	# delete all records from the table
-	# ---------------------------------
-	def delete_table_data(self):
-		self.f_handle.truncate(0)
-		self.f_handle.seek(0)
-		self.f_handle.flush()
+        self.f_handle.seek(0)  # back to the head of file,offset=0
+        self.f_handle.truncate(0)  # cut all data after offset=0
+        # print self.f_handle.tell()
+        self.f_handle.write('\n'.join(self.record_list))  # write record_list
+        self.f_handle.write('\n')
+        self.f_handle.flush()
 
-	#--------------------------
-	# to delete the data file
-	#--------------------------
-	def delete_data_file(self, tableName):
-		if os.path.exists(tableName + '.txt'):
-			self.f_handle.close()
-			os.remove(tableName + '.txt')
+    # -------------------------------
+    # delete all records from the table
+    # ---------------------------------
+    def delete_table_data(self):
+        self.f_handle.truncate(0)
+        self.f_handle.seek(0)
+        self.f_handle.flush()
 
-	# --------------------------------
-	# to update one record of the table
-	# input
-	#       condition_list: the where condition, of which each element is a tuple (field_name, field_value)
-	#       new_value_list: new value list, of which each element is a tuple (field_name, new_field_value)
-	# -------------------------------
+    # --------------------------
+    # to delete the data file
+    # --------------------------
+    def delete_data_file(self, tableName):
+        if os.path.exists(tableName + '.txt'):
+            self.f_handle.close()
+            os.remove(tableName + '.txt')
 
-	def update_record(self, condition_list, new_value_list,field_name_list):
-		updateIndex = field_name_list.index(condition_list[0])
-		for idx in range(len(self.record_list)):
-			tmp = self.record_list[idx].split('|')
-			if tmp[updateIndex] == condition_list[1]:
-				tmp[updateIndex] = new_value_list[1]
-				self.record_list[idx] = '|'.join(tmp)
+    # --------------------------------
+    # to update one record of the table
+    # input
+    #       condition_list: the where condition, of which each element is a tuple (field_name, field_value)
+    #       new_value_list: new value list, of which each element is a tuple (field_name, new_field_value)
+    # -------------------------------
 
-		self.f_handle.truncate(0)
-		#print self.f_handle.tell()
-		self.f_handle.seek(0)
-		self.f_handle.write('\n'.join(self.record_list))
-		self.f_handle.write('\n')
-		self.f_handle.flush()
+    def update_record(self, condition_list, new_value_list, field_name_list):
+        updateIndex = field_name_list.index(condition_list[0])
+        for idx in range(len(self.record_list)):
+            tmp = self.record_list[idx].split('|')
+            if tmp[updateIndex] == condition_list[1]:
+                tmp[updateIndex] = new_value_list[1]
+                self.record_list[idx] = '|'.join(tmp)
+
+        self.f_handle.truncate(0)
+        # print self.f_handle.tell()
+        self.f_handle.seek(0)
+        self.f_handle.write('\n'.join(self.record_list))
+        self.f_handle.write('\n')
+        self.f_handle.flush()

@@ -3,6 +3,11 @@ import pickle
 import time
 from common_db import *
 
+
+# ----------------------------------------
+# transaction_db.py
+# B22042225
+# -----------------------
 class TransactionManager:
     def __init__(self):
         self.before_image_file = "before_image.log"
@@ -100,7 +105,7 @@ class TransactionManager:
                             f.seek(pos)
                             last_entry = pickle.load(f)
                             if (last_entry.get('trans_id') == trans_id and
-                                last_entry.get('table_name') == table_name):
+                                    last_entry.get('table_name') == table_name):
                                 # 找到相关记录，更新operation
                                 last_entry['operation'] = operation
                                 f.seek(pos)

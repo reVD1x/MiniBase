@@ -9,8 +9,7 @@
 import common_db
 
 # the following two packages need to be installed by yourself
-import ply.yacc as yacc 
-import ply.lex as lex
+import ply.yacc as yacc
 
 
 
@@ -52,6 +51,7 @@ def check_syn_tree(syn_tree):
 #       
 # output:
 #       the root node of syntax tree
+# B22042228
 #--------------------------------------      
 def p_expr_query(t):
     """Query : SFW"""
@@ -72,6 +72,7 @@ def p_expr_query(t):
 #       
 # output:
 #       the nodes
+# B22042228
 #--------------------------------------   
 def p_expr_sfw(t):
     """SFW : SELECT SelList FROM FromList WHERE Cond"""
@@ -89,6 +90,7 @@ def p_expr_sfw(t):
 #
 # output:
 #       the nodes
+# B22042228
 #--------------------------------------
 def p_expr_sfw_no_where(t):
     """SFW : SELECT SelList FROM FromList"""
@@ -109,6 +111,7 @@ def p_expr_sfw_no_where(t):
 #       
 # output:
 #       the nodes
+# B22042228
 #--------------------------------------   
 
 def p_expr_sel_list_first(t):
@@ -130,6 +133,7 @@ def p_expr_sel_list_first(t):
 #       
 # output:
 #       the nodes
+# B22042228
 #--------------------------------------   
 def p_expr_sel_list_second(t):
     """SelList : TCNAME"""
@@ -142,7 +146,10 @@ def p_expr_sel_list_second(t):
 
     return t
 
+#------------------------------
 # 在原有的p_expr_sel_list_second之后添加一个新规则来处理星号
+# B22042228
+#------------------------------
 def p_expr_sel_list_star(t):
     """SelList : STAR"""
     # 将星号作为特殊标记放入语法树
@@ -155,6 +162,7 @@ def p_expr_sel_list_star(t):
 #       
 # output:
 #       the nodes
+# B22042228
 #--------------------------------------   
 def p_expr_fromlist_first(t):
     """FromList : TCNAME COMMA FromList"""
@@ -175,6 +183,7 @@ def p_expr_fromlist_first(t):
 #       
 # output:
 #       the nodes
+# B22042228
 #--------------------------------------           
 def p_expr_fromlist_second(t):
     """FromList : TCNAME"""
@@ -192,6 +201,7 @@ def p_expr_fromlist_second(t):
 #       
 # output:
 #       the nodes
+# B22042228
 #--------------------------------------   
 def p_expr_condition(t):
     """Cond : TCNAME EQX CONSTANT"""
@@ -231,6 +241,7 @@ def p_error(t):
 
 #------------------------------------------
 # to set the global_parser handle in common_db.py
+# B22042228
 #---------------------------------------------    
 def set_handle():    
     try:
