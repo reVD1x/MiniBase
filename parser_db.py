@@ -226,8 +226,38 @@ def p_expr_condition(t):
 
     return t 
 
+#------------------------------
+# 在现有的p_expr_condition函数后添加对AND条件的支持
+# B22042228
+#------------------------------
+def p_expr_condition_and(t):
+    """Cond : Cond AND TCNAME EQX CONSTANT"""
 
-    
+    # 处理表字段名 - 确保是字节字符串
+    if isinstance(t[3], str):
+        t[3] = t[3].encode('utf-8')
+
+    # 处理常量值 - 确保是字节字符串
+    if not isinstance(t[5], bytes):
+        if isinstance(t[5], (int, float)):
+            t[5] = str(t[5]).encode('utf-8')
+        elif isinstance(t[5], str):
+            t[5] = t[5].encode('utf-8')
+        else:
+            t[5] = str(t[5]).encode('utf-8')
+
+    # 创建新条件的节点
+    t[2] = common_db.Node(b'AND', None)
+    t[3] = common_db.Node(b'TCNAME', [t[3]])
+    t[4] = common_db.Node(b'=', None)
+    t[5] = common_db.Node(b'CONSTANT', [t[5]])
+
+    # 将新条件添加到原有条件中
+    # 创建一个带有AND连接符的复合条件节点
+    t[0] = common_db.Node(b'Cond', [t[1], t[2], t[3], t[4], t[5]])
+
+    return t
+
 #------------------------------
 # for error
 # input:

@@ -279,48 +279,91 @@ def execute_logical_tree():
                 elif 'X' not in dict_[idx]:
                     if 'Filter' in dict_[idx][0]:
                         FilterChoice = dict_[idx][0][1]
-                        TableIndex, FieldIndex, FieldType, isTrue = GetFilterParam(tableName_Order, current_field,
-                                                                                   FilterChoice[0])
-                        if not isTrue:
-                            return [], [], False
-                        else:
-                            if FieldType == 2:
-                                FilterParam = int(FilterChoice[2].strip())
-                            elif FieldType == 3:
-                                FilterParam = bool(FilterChoice[2].strip())
-                            else:
-                                # 处理字符串类型，确保是字节串且去掉引号
-                                if isinstance(FilterChoice[2], bytes):
-                                    # 去掉可能存在的引号
-                                    FilterParam = FilterChoice[2].strip().replace(b"'", b"").replace(b'"', b"")
-                                else:
-                                    # 去掉可能存在的引号并转换为字节串
-                                    FilterParam = str(FilterChoice[2]).strip().replace("'", "").replace('"', "").encode(
-                                        'utf-8')
 
-                            print("条件比较: 字段类型=", FieldType, "查询条件值=", FilterParam)
-
-                        tmp_List = current_list[:]
+                        # 处理条件列表，可能包含多个AND条件
+                        temp_List = current_list[:]
                         current_list = []
-                        for tmpRecord in tmp_List:
-                            if len(current_field) == 1:
-                                ans = tmpRecord[FieldIndex]
+
+                        # 识别AND条件
+                        has_and = False
+                        and_conditions = []
+
+                        # 首先检查条件是否包含AND结构
+                        i = 0
+                        while i < len(FilterChoice):
+                            if isinstance(FilterChoice[i], bytes) and FilterChoice[i] == b'AND':
+                                has_and = True
+                                # 第一个条件: [字段, '=', 值]
+                                first_cond = [FilterChoice[i-3], FilterChoice[i-2], FilterChoice[i-1]]
+                                # 第二个条件: [字段, '=', 值]
+                                second_cond = [FilterChoice[i+1], FilterChoice[i+2], FilterChoice[i+3]]
+
+                                # 如果之前没有添加过第一个条件，则添加
+                                if not and_conditions:
+                                    and_conditions.append(first_cond)
+
+                                # 添加第二个条件
+                                and_conditions.append(second_cond)
+                                i += 4  # 跳过已处理的元素
                             else:
-                                ans = tmpRecord[TableIndex][FieldIndex]
+                                i += 1
 
-                            # 确保ans是正确的类型
-                            if FieldType == 0 or FieldType == 1:  # 字符串类型
-                                if isinstance(ans, bytes):
-                                    ans = ans.strip()
+                        # 如果没有识别到AND结构，则按照传统方式处理单个条件
+                        if not has_and:
+                            and_conditions = [[FilterChoice[0], FilterChoice[1], FilterChoice[2]]]
+
+                        print("识别的条件:", and_conditions)
+
+                        # 处理每个条件
+                        for condition in and_conditions:
+                            condition_field, condition_op, condition_value = condition
+
+                            # 获取字段信息
+                            TableIndex, FieldIndex, FieldType, isTrue = GetFilterParam(
+                                tableName_Order, current_field, condition_field)
+
+                            if not isTrue:
+                                print(f"条件 {condition_field} 无效")
+                                return [], [], False
+
+                            # 处理条件值
+                            if FieldType == 2:  # 整数
+                                FilterParam = int(condition_value.strip())
+                            elif FieldType == 3:  # 布尔
+                                FilterParam = bool(condition_value.strip())
+                            else:  # 字符串
+                                if isinstance(condition_value, bytes):
+                                    FilterParam = condition_value.strip().replace(b"'", b"").replace(b'"', b"")
                                 else:
-                                    ans = str(ans).strip().encode('utf-8')
+                                    FilterParam = str(condition_value).strip().replace("'", "").replace('"', "").encode('utf-8')
 
-                            print("比较: 记录值=", ans, "条件值=", FilterParam)
+                            print(f"条件比较: 字段={condition_field.decode('utf-8') if isinstance(condition_field, bytes) else condition_field}, 类型={FieldType}, 值={FilterParam}")
 
-                            # 执行比较
-                            if ans == FilterParam:
-                                print("找到匹配记录!")
-                                current_list.append(tmpRecord)
+                            # 应用过滤条件
+                            filtered_list = []
+                            for record in (current_list if current_list else temp_List):
+                                if len(current_field) == 1:
+                                    field_value = record[FieldIndex]
+                                else:
+                                    field_value = record[TableIndex][FieldIndex]
+
+                                # 确保类型一致
+                                if FieldType == 0 or FieldType == 1:  # 字符串类型
+                                    if isinstance(field_value, bytes):
+                                        field_value = field_value.strip()
+                                    else:
+                                        field_value = str(field_value).strip().encode('utf-8')
+
+                                # 比较并过滤
+                                if field_value == FilterParam:
+                                    filtered_list.append(record)
+
+                            # 更新结果集为过滤后的记录
+                            current_list = filtered_list
+
+                        # 如果处理完所有条件后没有记录，输出提示
+                        if not current_list:
+                            print("没有满足所有条件的记录")
 
                     if 'Proj' in dict_[idx][0]:
                         SelIndexList = []

@@ -2,7 +2,6 @@ Created by PLY version 3.11 (http://www.dabeaz.com/ply)
 
 Unused terminals:
 
-    AND
     SPACE
 
 Grammar
@@ -17,24 +16,25 @@ Rule 6     SelList -> STAR
 Rule 7     FromList -> TCNAME COMMA FromList
 Rule 8     FromList -> TCNAME
 Rule 9     Cond -> TCNAME EQX CONSTANT
+Rule 10    Cond -> Cond AND TCNAME EQX CONSTANT
 
 Terminals, with rules where they appear
 
-AND                  : 
+AND                  : 10
 COMMA                : 4 7
-CONSTANT             : 9
-EQX                  : 9
+CONSTANT             : 9 10
+EQX                  : 9 10
 FROM                 : 2 3
 SELECT               : 2 3
 SPACE                : 
 STAR                 : 6
-TCNAME               : 4 5 7 8 9
+TCNAME               : 4 5 7 8 9 10
 WHERE                : 2
 error                : 
 
 Nonterminals, with rules where they appear
 
-Cond                 : 2
+Cond                 : 2 10
 FromList             : 2 3 7
 Query                : 0
 SFW                  : 1
@@ -157,6 +157,7 @@ state 12
 
     (2) SFW -> SELECT SelList FROM FromList WHERE . Cond
     (9) Cond -> . TCNAME EQX CONSTANT
+    (10) Cond -> . Cond AND TCNAME EQX CONSTANT
 
     TCNAME          shift and go to state 15
 
@@ -175,15 +176,17 @@ state 13
 state 14
 
     (2) SFW -> SELECT SelList FROM FromList WHERE Cond .
+    (10) Cond -> Cond . AND TCNAME EQX CONSTANT
 
     $end            reduce using rule 2 (SFW -> SELECT SelList FROM FromList WHERE Cond .)
+    AND             shift and go to state 17
 
 
 state 15
 
     (9) Cond -> TCNAME . EQX CONSTANT
 
-    EQX             shift and go to state 17
+    EQX             shift and go to state 18
 
 
 state 16
@@ -196,14 +199,44 @@ state 16
 
 state 17
 
-    (9) Cond -> TCNAME EQX . CONSTANT
+    (10) Cond -> Cond AND . TCNAME EQX CONSTANT
 
-    CONSTANT        shift and go to state 18
+    TCNAME          shift and go to state 19
 
 
 state 18
 
+    (9) Cond -> TCNAME EQX . CONSTANT
+
+    CONSTANT        shift and go to state 20
+
+
+state 19
+
+    (10) Cond -> Cond AND TCNAME . EQX CONSTANT
+
+    EQX             shift and go to state 21
+
+
+state 20
+
     (9) Cond -> TCNAME EQX CONSTANT .
 
+    AND             reduce using rule 9 (Cond -> TCNAME EQX CONSTANT .)
     $end            reduce using rule 9 (Cond -> TCNAME EQX CONSTANT .)
+
+
+state 21
+
+    (10) Cond -> Cond AND TCNAME EQX . CONSTANT
+
+    CONSTANT        shift and go to state 22
+
+
+state 22
+
+    (10) Cond -> Cond AND TCNAME EQX CONSTANT .
+
+    AND             reduce using rule 10 (Cond -> Cond AND TCNAME EQX CONSTANT .)
+    $end            reduce using rule 10 (Cond -> Cond AND TCNAME EQX CONSTANT .)
 
