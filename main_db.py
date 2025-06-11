@@ -51,27 +51,39 @@ def main():
             if tableName.strip() not in schemaObj.get_table_name_list():
                 # Create a new table
                 dataObj = storage_db.Storage(tableName)
-
                 insertFieldList = dataObj.getFieldList()  # get the field list from the data file
-
                 schemaObj.appendTable(tableName, insertFieldList)  # add the table structure to schema file
             else:
                 dataObj = storage_db.Storage(tableName)
 
-                # to the students: The following needs to be further implemented (many lines can be added)
-                record = []
-                Field_List = dataObj.getFieldList()
-                for x in Field_List:
-                    s = 'Input field name is: ' + str(x[0].strip()) + '  field type is: ' + str(x[1]) + \
-                        ' field maximum length is: ' + str(x[2]) + '\n'
-                    record.append(input(s))
+                try:
+                    # 开始事务
+                    dataObj.begin_transaction()
 
-                if dataObj.insert_record(record):  # add a row
-                    print('OK!')
-                else:
-                    print('Wrong input!')
+                    # 收集记录数据
+                    record = []
+                    Field_List = dataObj.getFieldList()
+                    for x in Field_List:
+                        s = 'Input field name is: ' + str(x[0].strip()) + '  field type is: ' + str(x[1]) + \
+                            ' field maximum length is: ' + str(x[2]) + '\n'
+                        record.append(input(s))
 
-                del dataObj
+                    if dataObj.insert_record(record):  # add a row
+                        # 提交事务
+                        dataObj.commit_transaction()
+                        print('OK!')
+                    else:
+                        # 回滚事务
+                        dataObj.rollback_transaction()
+                        print('Wrong input!')
+
+                except Exception as e:
+                    if dataObj:
+                        dataObj.rollback_transaction()
+                    print(f'Error: {str(e)}')
+                finally:
+                    if dataObj:
+                        del dataObj
 
             choice = input(PROMPT_STR)
 
@@ -140,19 +152,55 @@ def main():
         elif choice == '5':  # process SELECT FROM WHERE clause
             print('#        Your Query is to SQL QUERY                  #')
             sql_str = input('please enter the select from where clause:')
-            lex_db.set_lex_handle()  # to set the global_lexer in common_db.py
-            parser_db.set_handle()  # to set the global_parser in common_db.py
 
             try:
+                # 确保先重载模块，以避免全局变量引用问题
+                print("重新加载模块...")
+                importlib.reload(common_db)
+                importlib.reload(lex_db)
+                importlib.reload(parser_db)
+                importlib.reload(query_plan_db)
+
+                # 初始化词法分析器和语法分析器
+                print("初始化词法分析器...")
+                lex_db.set_lex_handle()  # to set the global_lexer in common_db.py
+                if common_db.global_lexer is None:
+                    raise Exception("词法分析器初始化失败")
+
+                print("初始化语法分析器...")
+                parser_db.set_handle()  # to set the global_parser in common_db.py
+                if common_db.global_parser is None:
+                    raise Exception("语法分析器初始化失败")
+
+                # 确保SQL字符串使用正确编码
+                sql_str = sql_str.strip()
+
+                # 解析SQL语句构建语法树
+                print('解析SQL语句:', sql_str)
                 common_db.global_syn_tree = common_db.global_parser.parse(
-                    sql_str.strip(),
-                    lexer = common_db.global_lexer
-                )  # construct the global_syn_tree
-                importlib.reload(query_plan_db)  # reload query_plan_db module to construct the query plan
-                query_plan_db.construct_logical_tree()
-                query_plan_db.execute_logical_tree()
-            except:
-                print('WRONG SQL INPUT!')
+                    sql_str,
+                    lexer=common_db.global_lexer
+                )
+
+                # 执行SQL语句
+                if common_db.global_syn_tree:
+                    print('语法树构建成功')
+                    # 构建逻辑树
+                    query_plan_db.construct_logical_tree()
+
+                    # 执行查询
+                    if common_db.global_logical_tree:
+                        print('执行逻辑树...')
+                        query_plan_db.execute_logical_tree()
+                    else:
+                        print('逻辑查询树生成失败')
+                else:
+                    print('SQL语句解析失败')
+
+            except Exception as e:
+                print('SQL输入错误: ', str(e))
+                import traceback
+                traceback.print_exc()
             print('#----------------------------------------------------#')
             choice = input(PROMPT_STR)
 
@@ -184,7 +232,6 @@ def main():
             choice = input(PROMPT_STR)
 
         elif choice == '7':  # update a line of data given the keyword
-
             table_name = input('please input the name of the table:').strip()
             keyword_field = input('please input the search field name:').strip()
             keyword_value = input('please input the search value:').strip()
@@ -196,11 +243,20 @@ def main():
 
             try:
                 storage = storage_db.Storage(table_name)
+                # 开始事务
+                storage.begin_transaction()
+
                 if storage.update_row_by_keyword(keyword_field, keyword_value, update_field, new_value):
+                    # 更新成功，提交事务
+                    storage.commit_transaction()
                     print("Update successful!")
                 else:
+                    # 更新失败，回滚事务
+                    storage.rollback_transaction()
                     print("Update failed (no matching record or invalid fields)")
             except Exception as e:
+                if 'storage' in locals():
+                    storage.rollback_transaction()
                 print(f"Error: {str(e)}")
             finally:
                 if 'storage' in locals():

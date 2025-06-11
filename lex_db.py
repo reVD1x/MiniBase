@@ -10,7 +10,7 @@
 import ply.lex as lex
 import common_db
 
-tokens=('SELECT','FROM','WHERE','AND','TCNAME','EQX','COMMA','CONSTANT','SPACE')
+tokens=('SELECT','FROM','WHERE','AND','TCNAME','EQX','COMMA','CONSTANT','SPACE','STAR')
 
 # the following is defining rules for each token
 def t_SELECT(t):
@@ -27,6 +27,11 @@ def t_WHERE(t):
 
 def t_AND(t):
     r'and'
+    return t
+
+# 添加对星号的支持
+def t_STAR(t):
+    r'\*'
     return t
 
 # table column name:
