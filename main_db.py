@@ -160,30 +160,26 @@ def main():
         elif choice == '6':  # delete a line of data from the storage file given the keyword
 
             table_name = input('please input the name of the table to be deleted from:')
-            field_name = input('please input the field name and the corresponding keyword (fieldName:keyword):')
-            # to the students: to be inserted here, delete the line from data files
-
             if isinstance(table_name, str):
                 table_name = table_name.encode('utf-8')
-
-            if table_name.strip():
-                if not schemaObj.find_table(table_name.strip()):
-                    print('table name is None')
-                else:
-                    try:
-                        field_name, keyword = field_name.split(':', 1)
-                        field_name = field_name.strip()
-                        keyword = keyword.strip()
-                    except ValueError:
-                        print("wrong input format, please use 'fieldName:keyword'")
-                        choice = input(PROMPT_STR)
-                        continue
-
-                    dataObj = storage_db.Storage(table_name)  # create an object for the data of table
-                    field_list = dataObj.getFieldList()  # get the field list from the data file
-
-                    # for field in field_list:
-                    #   if field[0].strip() == field_name:
+            
+            if schemaObj.find_table(table_name.strip()):
+                field_keyword = input('please input the field name and the corresponding keyword (fieldname:keyword):')
+                try:
+                    field_name, keyword = field_keyword.split(':')
+                    field_name = field_name.strip()
+                    keyword = keyword.strip()
+                    
+                    dataObj = storage_db.Storage(table_name)
+                    if dataObj.delete_record_by_field(field_name, keyword):
+                        print('Record(s) deleted successfully!')
+                    else:
+                        print('Failed to delete record(s)!')
+                    del dataObj
+                except ValueError:
+                    print('Invalid format! Please use fieldname:keyword format')
+            else:
+                print('Table not found in schema!')
 
             choice = input(PROMPT_STR)
 
