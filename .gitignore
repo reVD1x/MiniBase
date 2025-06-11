@@ -1,0 +1,10 @@
+# 忽略所有 .log 文件
+*.log
+
+# 忽略所有 cache 文件和文件夹
+cache/
+*.cache
+
+# 忽略所有 .dat 文件，但保留 t1.dat
+*.dat
+!t1.dat
