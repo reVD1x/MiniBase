@@ -24,13 +24,25 @@ def print_log_content(file_path):
                     except EOFError:
                         break
         except Exception as e:
-            print(f"读取文件出错: {e}")
+            print(f"读取文件 {file_path} 时出错: {str(e)}")
     else:
-        print(f"\n{file_path} 文件不存在")
+        print(f"\n文件 {file_path} 不存在")
 
-if __name__ == "__main__":
-    # 打印所有日志文件的内容
-    print_log_content("before_image.log")
-    print_log_content("after_image.log")
-    print_log_content("active_trans.log")
-    print_log_content("commit_trans.log")
+def main():
+    """主函数，查看所有日志文件的内容"""
+    print("欢迎使用日志查看器！")
+    print("=" * 60)
+
+    # 查看所有日志文件
+    log_files = [
+        'before_image.log',
+        'after_image.log',
+        'active_trans.log',
+        'commit_trans.log'
+    ]
+
+    for log_file in log_files:
+        print_log_content(log_file)
+
+if __name__ == '__main__':
+    main()

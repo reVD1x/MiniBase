@@ -58,12 +58,15 @@ class TransactionManager:
 
     def write_before_image(self, trans_id, table_name, record):
         # 写入前像
+        if not isinstance(table_name, str):
+            table_name = table_name.decode('utf-8')
+
         log_entry = {
             'trans_id': trans_id,
             'table_name': table_name,
             'record': record,
             'timestamp': time.time(),
-            'operation': 'UPDATE'  # 前像只会在UPDATE操作时产生
+            'operation': 'DELETE'  # 因为前像只在DELETE和UPDATE操作时产生，这里先默认为DELETE，具体由after_image决定
         }
         with open(self.before_image_file, 'ab') as f:
             pickle.dump(log_entry, f)
@@ -71,7 +74,13 @@ class TransactionManager:
             os.fsync(f.fileno())  # 强制同步到磁盘
 
     def write_after_image(self, trans_id, table_name, record, operation):
-        # 写入后像，operation可以是'INSERT'或'UPDATE'
+        # 写入后像，operation可以是'INSERT'、'UPDATE'或'DELETE'
+        if not isinstance(table_name, str):
+            table_name = table_name.decode('utf-8')
+
+        if operation not in ['INSERT', 'UPDATE', 'DELETE']:
+            raise ValueError(f"Invalid operation type: {operation}")
+
         log_entry = {
             'trans_id': trans_id,
             'table_name': table_name,
@@ -79,10 +88,33 @@ class TransactionManager:
             'timestamp': time.time(),
             'operation': operation
         }
+
+        # 如果有对应的before_image，需要更新其operation
+        if operation in ['UPDATE', 'DELETE']:
+            try:
+                with open(self.before_image_file, 'rb+') as f:
+                    # 定位到最后一条相关记录
+                    pos = f.seek(0, 2)  # 移到文件末尾
+                    while pos > 0:
+                        try:
+                            f.seek(pos)
+                            last_entry = pickle.load(f)
+                            if (last_entry.get('trans_id') == trans_id and
+                                last_entry.get('table_name') == table_name):
+                                # 找到相关记录，更新operation
+                                last_entry['operation'] = operation
+                                f.seek(pos)
+                                pickle.dump(last_entry, f)
+                                break
+                        except:
+                            pos -= 1
+            except:
+                pass  # 如果更新before_image失败，不影响after_image的写入
+
         with open(self.after_image_file, 'ab') as f:
             pickle.dump(log_entry, f)
-            f.flush()  # 确保立即写入磁盘
-            os.fsync(f.fileno())  # 强制同步到磁盘
+            f.flush()
+            os.fsync(f.fileno())
 
     def commit_transaction(self, trans_id):
         # 提交事务

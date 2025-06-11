@@ -406,17 +406,16 @@ class Storage(object):
         try:
             # 7. 删除记录（从后向前删除，避免索引变化问题）
             for idx in sorted(records_to_delete, reverse=True):
-                # 在删除前记录原始记录（用于事务回滚）
+                # 获取原始记录
                 original_record = self.record_list[idx]
-                original_position = self.record_Position[idx]
-                
+
+                # 记录删除操作的日志
+                self._write_log("delete", original_record)
+
                 # 删除内存中的记录
                 del self.record_list[idx]
                 del self.record_Position[idx]
-                
-                # 这里应该调用一个方法来更新磁盘上的记录
-                # 但由于我们没有看到直接的方法，我们可以修改文件结构
-            
+
             # 8. 更新数据块信息
             # 更新数据块数量
             if len(self.record_list) == 0:
@@ -435,57 +434,15 @@ class Storage(object):
             if len(self.record_list) == 0:
                 self.f_handle.truncate(BLOCK_SIZE)
             else:
-                # 重写数据块
-                # 更新数据块头部
+                # 重写数据块头部
                 self.f_handle.seek(BLOCK_SIZE)
                 buf = ctypes.create_string_buffer(struct.calcsize('!ii'))
-                struct.pack_into('!ii', buf, 0, 1, len(self.record_list))  # block_id=1, record_count
+                struct.pack_into('!ii', buf, 0, 1, len(self.record_list))
                 self.f_handle.write(buf)
                 
-                # 计算记录大小
-                record_head_len = struct.calcsize('!ii10s')
-                record_content_len = sum(map(lambda x: x[2], self.field_name_list))
-                record_len = record_head_len + record_content_len
-                
-                # 写入记录偏移量和数据
-                for i in range(len(self.record_list)):
-                    # 写入偏移量
-                    offset = struct.calcsize('!ii') + i * struct.calcsize('!i')
-                    self.f_handle.seek(BLOCK_SIZE + offset)
-                    buf = ctypes.create_string_buffer(struct.calcsize('!i'))
-                    data_offset = BLOCK_SIZE - (i + 1) * record_len
-                    struct.pack_into('!i', buf, 0, data_offset)
-                    self.f_handle.write(buf)
-                    
-                    # 写入记录数据
-                    self.f_handle.seek(BLOCK_SIZE + data_offset)
-                    buf = ctypes.create_string_buffer(record_len)
-                    
-                    # 写入记录头
-                    record_schema_address = struct.calcsize('!iii')
-                    update_time = '2023-11-16'  # 当前日期
-                    struct.pack_into('!ii10s', buf, 0, record_schema_address, record_content_len, update_time.encode('utf-8'))
-                    
-                    # 准备记录内容
-                    record_data = ''
-                    for j, field_value in enumerate(self.record_list[i]):
-                        if isinstance(field_value, bytes):
-                            field_value = field_value.decode('utf-8')
-                        field_value = str(field_value)
-                        field_length = self.field_name_list[j][2]
-                        
-                        # 确保字段值长度符合要求
-                        if len(field_value) < field_length:
-                            field_value = ' ' * (field_length - len(field_value)) + field_value
-                        elif len(field_value) > field_length:
-                            field_value = field_value[:field_length]
-                        
-                        record_data += field_value
-                    
-                    # 写入记录内容
-                    struct.pack_into('!' + str(record_content_len) + 's', buf, record_head_len, record_data.encode('utf-8'))
-                    self.f_handle.write(buf.raw)
-            
+                # 重写所有记录
+                self._rewrite_all_records()
+
             # 提交事务
             self.commit_transaction()
             print(f"Deleted {len(records_to_delete)} record(s) with {field_name}={keyword}")
@@ -670,6 +627,7 @@ class Storage(object):
     # 开始一个新事务
     # --------------------------------
     def begin_transaction(self):
+        """开始一个新的事务"""
         self.current_transaction = self.transaction_manager.begin_transaction()
         return self.current_transaction
 
@@ -677,21 +635,19 @@ class Storage(object):
     # 提交当前事务
     # --------------------------------
     def commit_transaction(self):
+        """提交当前事务"""
         if self.current_transaction:
             self.transaction_manager.commit_transaction(self.current_transaction)
             self.current_transaction = None
-            return True
-        return False
 
     # --------------------------------
     # 回滚当前事务
     # --------------------------------
     def rollback_transaction(self):
+        """回滚当前事务"""
         if self.current_transaction:
             self.transaction_manager.rollback_transaction(self.current_transaction)
             self.current_transaction = None
-            return True
-        return False
 
     # --------------------------------
     # 写入日志
@@ -703,25 +659,93 @@ class Storage(object):
         if not self.current_transaction:
             return False
 
+        table_name = os.path.splitext(os.path.basename(self.f_handle.name))[0]
+
         if operation_type == "insert":
             # 对于插入操作，只需要记录后像
             self.transaction_manager.write_after_image(
                 self.current_transaction,
-                os.path.basename(self.f_handle.name),
+                table_name,
                 record_data,
-                'INSERT'  # 明确指定为插入操作
+                'INSERT'
             )
         elif operation_type == "update":
             # 对于更新操作，需要记录前像和后像
             self.transaction_manager.write_before_image(
                 self.current_transaction,
-                os.path.basename(self.f_handle.name),
+                table_name,
                 record_data[0]  # 原始数据
             )
             self.transaction_manager.write_after_image(
                 self.current_transaction,
-                os.path.basename(self.f_handle.name),
+                table_name,
                 record_data[1],  # 新数据
-                'UPDATE'  # 明确指定为更新操作
+                'UPDATE'
+            )
+        elif operation_type == "delete":
+            # 对于删除操作，记录前像和后像
+            self.transaction_manager.write_before_image(
+                self.current_transaction,
+                table_name,
+                record_data  # 被删除的记录
+            )
+            self.transaction_manager.write_after_image(
+                self.current_transaction,
+                table_name,
+                None,  # 删除操作的后像为空
+                'DELETE'
             )
         return True
+
+    def delete_row_by_keyword(self, field_name, keyword):
+        """根据关键字删除记录"""
+        if not self.current_transaction:
+            self.begin_transaction()
+
+        try:
+            field_index = -1
+            # 查找字段索引
+            for i, field in enumerate(self.field_name_list):
+                if field[0].strip().decode('utf-8') == field_name:
+                    field_index = i
+                    break
+
+            if field_index == -1:
+                return False
+
+            # 找到要删除的记录
+            deleted = False
+            for i, record in enumerate(self.record_list):
+                if str(record[field_index]).strip() == str(keyword).strip():
+                    # 写入前像（删除前的记录）
+                    self.transaction_manager.write_before_image(
+                        self.current_transaction,
+                        os.path.splitext(os.path.basename(self.f_handle.name))[0],
+                        record
+                    )
+
+                    # 执行删除操作
+                    del self.record_list[i]
+                    del self.record_Position[i]
+
+                    # 写入后像（空记录，表示删除）
+                    self.transaction_manager.write_after_image(
+                        self.current_transaction,
+                        os.path.splitext(os.path.basename(self.f_handle.name))[0],
+                        None,
+                        'DELETE'
+                    )
+
+                    deleted = True
+                    break
+
+            if deleted:
+                self.commit_transaction()
+                return True
+
+            self.rollback_transaction()
+            return False
+
+        except Exception as e:
+            self.rollback_transaction()
+            raise e
