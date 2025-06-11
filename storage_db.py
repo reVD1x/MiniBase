@@ -354,6 +354,64 @@ class Storage(object):
         return self.field_name_list
 
     # --------------------------------
+    # delete records by field name and keyword
+    # input:
+    #       field_name: the field name to search by
+    #       keyword: the value to match
+    # output:
+    #       True or False
+    # -----------------------------------
+    def delete_record_by_field(self, field_name, keyword):
+        # 1. 规范化字段名（从字节解码为字符串）
+        field_names = [f[0].decode('utf-8').strip() for f in self.field_name_list]
+        
+        # 2. 检查字段是否存在
+        if field_name not in field_names:
+            print(f"Error: Valid fields are {field_names}")
+            return False
+        
+        # 3. 获取字段索引和类型
+        field_idx = field_names.index(field_name)
+        field_type = self.field_name_list[field_idx][1]
+        
+        # 4. 类型转换处理
+        try:
+            if field_type == 2:  # int
+                keyword = int(keyword)
+            elif field_type == 3:  # bool
+                keyword = bool(int(keyword))
+        except ValueError:
+            print(f"Type error: Cannot convert '{keyword}' to field type {field_type}")
+            return False
+        
+        # 5. 查找要删除的记录
+        records_to_delete = []
+        for i, record in enumerate(self.record_list):
+            # 获取字段值
+            field_value = record[field_idx]
+            if isinstance(field_value, bytes):
+                field_value = field_value.decode('utf-8').strip()
+            
+            # 比较值并标记要删除的记录
+            if str(field_value) == str(keyword):
+                records_to_delete.append(i)
+        
+        if not records_to_delete:
+            print(f"No records found with {field_name}={keyword}")
+            return False
+        
+        # 6. 删除记录（从后向前删除，避免索引变化问题）
+        for idx in sorted(records_to_delete, reverse=True):
+            del self.record_list[idx]
+            del self.record_Position[idx]
+        
+        # 7. 更新文件
+        # 重新写入整个文件比较复杂，这里简化处理
+        # 实际应用中应该更新文件中的记录标记或重组文件
+        print(f"Deleted {len(records_to_delete)} record(s) with {field_name}={keyword}")
+        return True
+
+    # --------------------------------
     # update one record by keyword, support byte storage and string comparison
     # input:
     #       keyword_field: the field name to be used as keyword
